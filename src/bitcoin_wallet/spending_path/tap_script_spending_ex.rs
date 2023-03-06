@@ -84,7 +84,7 @@ impl<'a> TapScriptSendEx<'a> {
         let tap_spending_info = tap_builder.finalize(&self.secp, internal_key).unwrap();
         let witness = Script::new_v1_p2tr_tweaked(tap_spending_info.output_key());
 
-        return Box::new(
+        Box::new(
             move |previous_list: Vec<Transaction>, current_tx: Transaction| {
                 let mut unlock_vec_vec: Vec<Vec<UnlockFn>> = vec![];
                 let prev_output_list = previous_list
@@ -119,7 +119,7 @@ impl<'a> TapScriptSendEx<'a> {
                 }
                 return unlock_vec_vec;
             },
-        );
+        )
     }
 
     pub fn finialize_script(

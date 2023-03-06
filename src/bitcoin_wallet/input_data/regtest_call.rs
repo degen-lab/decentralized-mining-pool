@@ -13,7 +13,7 @@ pub struct RegtestCall {
     amount: u64,
     tx_in: Vec<TxIn>,
     previous_tx: Vec<Transaction>,
-    pub address_list: Vec<Address>,
+    address_list: Vec<Address>,
     client: Client,
 }
 
@@ -40,13 +40,21 @@ impl RpcCall for RegtestCall {
 }
 
 impl<'a> RegtestCall {
+    // pub fn get_client() -> Client {
+    //     return Client::new(
+    //         "http://127.0.0.1:18443",
+    //         bitcoincore_rpc::Auth::UserPass(
+    //             "foo".to_string(),
+    //             "qDDZdeQ5vw9XXFeVnXT4PZ--tGN2xNjjR4nrtyszZx0=".to_owned(),
+    //         ),
+    //     )
+    //     .unwrap();
+    // }
+
     pub fn get_client() -> Client {
         return Client::new(
-            "http://127.0.0.1:18443",
-            bitcoincore_rpc::Auth::UserPass(
-                "foo".to_string(),
-                "qDDZdeQ5vw9XXFeVnXT4PZ--tGN2xNjjR4nrtyszZx0=".to_owned(),
-            ),
+            "http://127.0.0.1:18443/wallet/regtest11112",
+            bitcoincore_rpc::Auth::UserPass("devnet".to_string(), "devnet".to_owned()),
         )
         .unwrap();
     }

@@ -9,7 +9,6 @@ use bitcoin::{
     Address, EcdsaSig, KeyPair, PrivateKey, SchnorrSig, SchnorrSighashType, Script, Transaction,
     TxIn, TxOut,
 };
-use bitcoin_hashes::hex::ToHex;
 
 use crate::bitcoin_wallet::constants::NETWORK;
 
@@ -98,7 +97,7 @@ pub fn sign_tapleaf<'a>(
     bob_script: Script,
 ) -> Box<impl FnOnce(&mut Input) + 'a> {
     let x_only = key_pair.public_key().x_only_public_key().0;
-    return Box::new(move |input: &mut Input| {
+    Box::new(move |input: &mut Input| {
         let witness_script = input.witness_script.as_ref().unwrap();
         let prev = filter_for_wit(&prev_out, &witness_script);
         let tap_leaf_hash = TapLeafHash::from_script(&bob_script, LeafVersion::TapScript);
@@ -122,7 +121,7 @@ pub fn sign_tapleaf<'a>(
         input
             .tap_script_sigs
             .insert((x_only, tap_leaf_hash), schnorrsig);
-    });
+    })
 }
 
 pub fn sign_key_sig<'a>(
@@ -184,7 +183,7 @@ pub fn sign_segwit_v0<'a>(
             .unwrap();
 
         let msg = Message::from_slice(&sig_hash).unwrap();
-        let sig = EcdsaSig::sighash_all(secp.sign_ecdsa(&msg.clone(), &priv_k));
+        let sig = EcdsaSig::sighash_all(secp.sign_ecdsa(&msg, &priv_k));
 
         input.partial_sigs.insert(public_key, sig);
     })
