@@ -9,16 +9,19 @@
 // each step here
 // function that creates OP_CODE scripts for branches
 
-use std::str::FromStr;
+use std::{collections::BTreeMap, str::FromStr};
 
 use bitcoin::{
     blockdata::{opcodes::all, script::Builder},
-    psbt::TapTree,
+    psbt::{Prevouts, TapTree},
     schnorr::TapTweak,
-    secp256k1::{All, Secp256k1, SecretKey},
-    util::taproot::TaprootBuilder,
-    Address, KeyPair, Network, OutPoint, PackedLockTime, Script, Sequence, Transaction, TxIn,
-    TxOut, Witness, XOnlyPublicKey,
+    secp256k1::{All, Message, Secp256k1, SecretKey},
+    util::{
+        sighash::{ScriptPath, SighashCache},
+        taproot::{ControlBlock, LeafVersion, TaprootBuilder, TaprootSpendInfo},
+    },
+    Address, KeyPair, Network, OutPoint, PackedLockTime, SchnorrSig, SchnorrSighashType, Script,
+    Sequence, Transaction, TxIn, TxOut, Witness, XOnlyPublicKey,
 };
 use bitcoin_hashes::{hex::FromHex, Hash};
 use electrum_client::{Client, ElectrumApi};
@@ -58,9 +61,10 @@ fn create_branch_2(
 fn create_tree(
     secp: &Secp256k1<All>,
     internal: KeyPair,
-    branch_1: bitcoin::Script,
-    branch_2: bitcoin::Script,
-) {
+    branch_1: &Script,
+    branch_2: &Script,
+) -> (bitcoin::util::taproot::TaprootSpendInfo, bitcoin::Address) {
+    // TODO: check if &branch_1.clone() is same value as bob_script.clone() on main file
     let builder =
         TaprootBuilder::with_huffman_tree(vec![(1, branch_1.clone()), (1, branch_2.clone())])
             .unwrap();
@@ -74,14 +78,15 @@ fn create_tree(
         .unwrap();
 
     let merkle_root = tap_info.merkle_root();
-    let tweak_key_pair = internal.tap_tweak(secp, merkle_root).into_inner();
-    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
+
     let address = Address::p2tr(
         secp,
         tap_info.internal_key(),
         tap_info.merkle_root(),
         Network::Testnet,
     );
+
+    return (tap_info, address);
 
     // TODO: write next funcitons, come back to see what to add to return here
     // return:
@@ -91,8 +96,8 @@ fn create_tree(
 }
 
 fn get_prev_txs(
-    client: Client,
-    address: Address,
+    client: &Client,
+    address: &Address,
 ) -> (
     std::vec::Vec<bitcoin::TxIn>,
     std::vec::Vec<bitcoin::Transaction>,
@@ -116,8 +121,8 @@ fn get_prev_txs(
     return (vec_tx_in, prev_tx);
 }
 
-fn create_transaction(vec_tx_in: Vec<TxIn>, address: Address) {
-    let mut tx = Transaction {
+fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: Address, amount: u64) -> Transaction {
+    Transaction {
         version: 2,
         lock_time: PackedLockTime(0),
         input: vec![TxIn {
@@ -128,15 +133,68 @@ fn create_transaction(vec_tx_in: Vec<TxIn>, address: Address) {
         }],
 
         output: vec![TxOut {
-            value: 100,
+            value: amount,
             // Address::from_str(
             //   //     "tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z",
             //   // )
             //   // .unwrap()
             //   // .script_pubkey(),
-            script_pubkey: address.script_pubkey(), // where funds are going
+            script_pubkey: output_address.script_pubkey(), // where funds are going
         }],
+    }
+}
+
+fn sign_tx(
+    secp: Secp256k1<All>,
+    tx: Transaction,
+    prevouts: &Prevouts<TxOut>,
+    script: &Script,
+    bob: &KeyPair,
+    tap_info: TaprootSpendInfo,
+    internal: KeyPair,
+) -> Transaction {
+    let sighash_sig = SighashCache::new(&mut tx.clone())
+        .taproot_script_spend_signature_hash(
+            0,
+            prevouts,
+            ScriptPath::with_defaults(script),
+            SchnorrSighashType::AllPlusAnyoneCanPay,
+        )
+        .unwrap();
+
+    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
+
+    let actual_control = tap_info
+        .control_block(&(script.clone(), LeafVersion::TapScript))
+        .unwrap();
+
+    // verify commitment
+    let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
+    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
+    let res = actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script);
+
+    // TODO: sync with main file this b_tree_map
+    // let mut b_tree_map = BTreeMap::<ControlBlock, (Script, LeafVersion)>::default();
+    // b_tree_map.insert(
+    //     actual_control.clone(),
+    //     (script.clone(), LeafVersion::TapScript),
+    // );
+
+    let schnorr_sig = SchnorrSig {
+        sig,
+        hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay,
     };
+
+    let wit = Witness::from_vec(vec![
+        schnorr_sig.to_vec(),
+        // preimage.clone(), TODO: uncomment it and check with it
+        script.to_bytes(),
+        actual_control.serialize(),
+    ]);
+
+    tx.input[0].witness = wit;
+
+    return tx;
 }
 
 pub fn test_main() {
@@ -174,12 +232,25 @@ pub fn test_main() {
     let alice_script = create_branch_1(alice_public_key);
     let bob_script = create_branch_2(preimage_hash, bob_public_key);
 
-    let info_tree = create_tree(&secp, internal, alice_script, bob_script);
+    let (tap_info, address) = create_tree(&secp, internal, &alice_script, &bob_script);
 
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
 
     // TODO: fix address
-    // let (vec_tx_in, prev_tx) = get_prev_txs(client, info_tree.address);
+    let (vec_tx_in, prev_tx) = get_prev_txs(&client, &address);
 
     // takes_transactions(client, address);
+
+    // creates tx
+    let output_address =
+        Address::from_str("tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z")
+            .unwrap();
+    let mut tx = create_transaction(vec_tx_in, output_address, 100);
+
+    // sign tx
+    let prevouts = Prevouts::One(0, prev_tx[0].output[0].clone());
+    tx = sign_tx(secp, tx, &prevouts, &bob_script, &bob, tap_info, internal);
+    // broadcast tx
+    let tx_id = client.transaction_broadcast(&tx).unwrap();
+    println!("transaction hash: {}", tx_id.to_string());
 }
