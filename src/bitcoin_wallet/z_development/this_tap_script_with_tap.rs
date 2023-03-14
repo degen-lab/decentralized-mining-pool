@@ -37,7 +37,7 @@ pub fn Test_tap_with_tap() {
         SecretKey::from_str("81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9")
             .unwrap();
     let internal_secret =
-        SecretKey::from_str("f2121892798ccb2ec9843b48dc73c40354d44a62d47ce8bbe60c64bde352f27a")
+        SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
             .unwrap();
 
     let alice = KeyPair::from_secret_key(&secp, &alice_secret);
@@ -48,7 +48,6 @@ pub fn Test_tap_with_tap() {
     let (internal_public_key, _) = internal.x_only_public_key();
     let preimage =
         Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
-
     let preimage_hash = bitcoin::hashes::sha256::Hash::hash(&preimage);
 
     println!("alice public key {}", alice.public_key());
@@ -92,34 +91,35 @@ pub fn Test_tap_with_tap() {
         bitcoin::Network::Testnet,
     );
     println!("address {}", address);
-    return;
-    println!("do we get here?");
+
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
     let vec_tx_in = client
         .script_list_unspent(&address.script_pubkey())
         .unwrap()
         .iter()
-        .map(|l| {
-            return TxIn {
-                previous_output: OutPoint::new(l.tx_hash, l.tx_pos.try_into().unwrap()),
-                script_sig: Script::new(),
-                sequence: bitcoin::Sequence(0xFFFFFFFF),
-                witness: Witness::default(),
-            };
+        .map(|l| TxIn {
+            previous_output: OutPoint::new(l.tx_hash, l.tx_pos.try_into().unwrap()),
+            script_sig: Script::new(),
+            sequence: bitcoin::Sequence(0xFFFFFFFF),
+            witness: Witness::default(),
         })
         .collect::<Vec<TxIn>>();
 
-    let prev_tx = vec_tx_in // it uses the txId, only one tx
+    let prev_tx = vec_tx_in // it uses the txId, only one tx per transaction
         .iter()
         .map(|tx_id| client.transaction_get(&tx_id.previous_output.txid).unwrap())
         .collect::<Vec<Transaction>>();
-
+    let amount = 399200;
     // tx is using the funds to send to a taproot address PoX address for our case
+
+    // println!("prev_tx {:?}", prev_tx);
+
     let mut tx = Transaction {
         version: 2,
         lock_time: bitcoin::PackedLockTime(0),
         // we have 1 tx as txin
-        // TODO: create one that takes this from all participants and creates this tx
+        // TODO: in same style, create one that takes this from all participants and creates this tx to send to pox address
+        // TODO: take all inputs from the script when spending, not the amount of only one previous tx
         input: vec![TxIn {
             previous_output: vec_tx_in[0].previous_output.clone(),
             script_sig: Script::new(),
@@ -129,7 +129,7 @@ pub fn Test_tap_with_tap() {
 
         // we have 1 tx as txout
         output: vec![TxOut {
-            value: 100,
+            value: amount,
             script_pubkey: Address::from_str(
                 "tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z",
             )
@@ -137,7 +137,6 @@ pub fn Test_tap_with_tap() {
             .script_pubkey(),
         }],
     };
-
     let prevouts = Prevouts::One(0, prev_tx[0].output[0].clone());
 
     let sighash_sig = SighashCache::new(&mut tx.clone())
@@ -150,11 +149,12 @@ pub fn Test_tap_with_tap() {
         .unwrap();
 
     // key signature not used, but functional
-    // TODO: find answer for bellow strange flow
+    // TODO: find answer for bellow strange / malicious possible flow
     // miners are singing the transaction spending from the scripts
     // one miner key spends his funds beforehand
     // the tx would not have enough funds to send to PoX
-    //
+
+    // not used
     // let key_sig = SighashCache::new(&mut tx.clone())
     //     .taproot_key_spend_signature_hash(0, &prevouts, SchnorrSighashType::AllPlusAnyoneCanPay)
     //     .unwrap();
@@ -163,12 +163,14 @@ pub fn Test_tap_with_tap() {
 
     println!("script sighash {} ", sighash_sig);
 
+    println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
     let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), &bob);
+    println!("signature {}", sig);
 
     let actual_control = tap_info
         .control_block(&(bob_script.clone(), LeafVersion::TapScript))
         .unwrap();
-
+    println!("control block {:#?} ", actual_control);
     // verifier for commitment
     let res =
         actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, &bob_script);
@@ -179,32 +181,37 @@ pub fn Test_tap_with_tap() {
 
     // construct tree based on bob script
     // why default() instead of new() ?
-    // TODO: what is this tree used for?
+    // TODO: what is this tree for? not used
     // let mut b_tree_map = BTreeMap::<ControlBlock, (Script, LeafVersion)>::default();
     // b_tree_map.insert(
     //     actual_control.clone(),
     //     (bob_script.clone(), LeafVersion::TapScript),
     // );
-
+    println!(
+        "tweak_key_pair_public_key: {:#?}",
+        tweak_key_pair_public_key
+    );
     let schnorr_sig = SchnorrSig {
         sig,
         hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay,
     };
-
+    println!("schnorr_sig {:#?}", schnorr_sig);
     let wit = Witness::from_vec(vec![
         schnorr_sig.to_vec(),
-        preimage.clone(), // TODO: check - probably not needed
+        preimage.clone(), // TODO: remove on the new op_codes operations
         bob_script.to_bytes(),
         actual_control.serialize(),
     ]);
 
+    // println!("wit: {:#?}", wit);
     tx.input[0].witness = wit;
+    println!("tx: {:#?}", tx);
 
     println!("Address: {} ", address.to_string());
-
+    return;
     // TODO: uncomment - this is working
-    // let tx_id = client.transaction_broadcast(&tx).unwrap();
-    // println!("transaction hash: {}", tx_id.to_string());
+    let tx_id = client.transaction_broadcast(&tx).unwrap();
+    println!("transaction hash: {}", tx_id.to_string());
 
     // sig
     println!("signature {:#?}", sig.to_hex());

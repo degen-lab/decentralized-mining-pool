@@ -26,41 +26,49 @@ use bitcoin::{
 use bitcoin_hashes::{hex::FromHex, Hash};
 use electrum_client::{Client, ElectrumApi};
 
+// working
 // branch refund after x blocks
 // alice case
-fn create_branch_1(alice_public_key: XOnlyPublicKey) -> bitcoin::Script {
+fn create_branch_1(alice_public_key: &XOnlyPublicKey) -> bitcoin::Script {
     // 144 OP_CHECKSEQUENCEVERIFY OP_DROP <pubkey_alice> OP_CHECKSIG
     Builder::new()
         .push_int(144)
         // .push_opcode(all::OP_CHECKSEQUENCEVERIFY) // fix this code
         .push_opcode(all::OP_DROP)
-        .push_x_only_key(&alice_public_key)
+        .push_x_only_key(alice_public_key)
         .push_opcode(all::OP_CHECKSIG)
-        .into_script()
+        .into_script();
+
+    Script::from_hex(
+        "029000b275209997a497d964fc1a62885b05a51166a65a90df00492c8d7cf61d6accf54803beac",
+    )
+    .unwrap()
 }
 
+// working
 // branch spending
 // bob case
 fn create_branch_2(
-    preimage_hash: bitcoin::hashes::sha256::Hash,
-    bob_public_key: XOnlyPublicKey,
+    preimage_hash: &bitcoin::hashes::sha256::Hash,
+    bob_public_key: &XOnlyPublicKey,
 ) -> bitcoin::Script {
     // OP_SHA256 preimage_hash OP_EQUALVERIFY <pubkey_bob> OP_CHECKSIG
     Builder::new()
         .push_opcode(all::OP_SHA256)
-        .push_slice(&preimage_hash)
+        .push_slice(preimage_hash)
         .push_opcode(all::OP_EQUALVERIFY)
-        .push_x_only_key(&bob_public_key)
+        .push_x_only_key(bob_public_key)
         .push_opcode(all::OP_CHECKSIG)
         .into_script()
 }
 
+// working
 // function that creates tree
 // in: scripts for branches
 // out: tree script
 fn create_tree(
     secp: &Secp256k1<All>,
-    internal: KeyPair,
+    internal: &KeyPair,
     branch_1: &Script,
     branch_2: &Script,
 ) -> (bitcoin::util::taproot::TaprootSpendInfo, bitcoin::Address) {
@@ -95,6 +103,7 @@ fn create_tree(
     // what else ?
 }
 
+// working
 fn get_prev_txs(
     client: &Client,
     address: &Address,
@@ -103,7 +112,7 @@ fn get_prev_txs(
     std::vec::Vec<bitcoin::Transaction>,
 ) {
     let vec_tx_in = client
-        .script_list_unspent(&address.script_pubkey())
+        .script_list_unspent(&(address.script_pubkey()))
         .unwrap()
         .iter()
         .map(|l| TxIn {
@@ -121,12 +130,13 @@ fn get_prev_txs(
     return (vec_tx_in, prev_tx);
 }
 
-fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: Address, amount: u64) -> Transaction {
+// working
+fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: &Address, amount: u64) -> Transaction {
     Transaction {
         version: 2,
         lock_time: PackedLockTime(0),
         input: vec![TxIn {
-            previous_output: vec_tx_in[0].previous_output.clone(),
+            previous_output: vec_tx_in[3].previous_output.clone(), //TODO: change this [3] for general case
             script_sig: Script::new(),
             sequence: Sequence(0xFFFFFFFF),
             witness: Witness::default(),
@@ -146,13 +156,15 @@ fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: Address, amount: u64
 
 fn sign_tx(
     secp: Secp256k1<All>,
-    tx: Transaction,
+    tx_ref: &Transaction,
     prevouts: &Prevouts<TxOut>,
     script: &Script,
     bob: &KeyPair,
-    tap_info: TaprootSpendInfo,
-    internal: KeyPair,
+    tap_info: &TaprootSpendInfo,
+    internal: &KeyPair,
+    preimage: &Vec<u8>,
 ) -> Transaction {
+    let mut tx = tx_ref.clone();
     let sighash_sig = SighashCache::new(&mut tx.clone())
         .taproot_script_spend_signature_hash(
             0,
@@ -161,12 +173,15 @@ fn sign_tx(
             SchnorrSighashType::AllPlusAnyoneCanPay,
         )
         .unwrap();
-
+    // println!("sighash_sig: {}", sighash_sig);
+    // println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
     let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
+    // println!("sig: {}", sig);
 
     let actual_control = tap_info
         .control_block(&(script.clone(), LeafVersion::TapScript))
         .unwrap();
+    // println!("actual_control: {:#?}", actual_control);
 
     // verify commitment
     let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
@@ -187,16 +202,17 @@ fn sign_tx(
 
     let wit = Witness::from_vec(vec![
         schnorr_sig.to_vec(),
-        // preimage.clone(), TODO: uncomment it and check with it
+        preimage.clone(), //TODO: remove on the new op_codes operations
         script.to_bytes(),
         actual_control.serialize(),
     ]);
 
     tx.input[0].witness = wit;
 
-    return tx;
+    tx
 }
 
+#[test]
 pub fn test_main() {
     let secp = Secp256k1::new();
     // predefined data
@@ -207,7 +223,7 @@ pub fn test_main() {
         SecretKey::from_str("81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9")
             .unwrap();
     let internal_secret =
-        SecretKey::from_str("f2121892798ccb2ec9843b48dc73c40354d44a62d47ce8bbe60c64bde352f27a")
+        SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
             .unwrap();
     let preimage =
         Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
@@ -229,27 +245,51 @@ pub fn test_main() {
     println!("preimage {}", preimage_hash.to_string());
 
     // scripts construction
-    let alice_script = create_branch_1(alice_public_key);
-    let bob_script = create_branch_2(preimage_hash, bob_public_key);
+    let alice_script = create_branch_1(&alice_public_key);
+    let bob_script = create_branch_2(&preimage_hash, &bob_public_key);
 
-    let (tap_info, address) = create_tree(&secp, internal, &alice_script, &bob_script);
+    println!("alice script {}", alice_script.to_string());
+    println!("bob script {}", bob_script.to_string());
+
+    let (tap_info, address) = create_tree(&secp, &internal, &alice_script, &bob_script);
+
+    println!("address {:?}", address);
 
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
-
-    // TODO: fix address
     let (vec_tx_in, prev_tx) = get_prev_txs(&client, &address);
 
-    // takes_transactions(client, address);
+    // now it is picked manually the highest value
+    // TODO: add all the inputs from the script and send that amount of funds
+    println!("prev_tx {:?}", prev_tx);
 
     // creates tx
     let output_address =
         Address::from_str("tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z")
             .unwrap();
-    let mut tx = create_transaction(vec_tx_in, output_address, 100);
+
+    // TODO: as decribed above, pick amount using the tapscript key_signed way of adding the funds from all prevouts
+    let amount = 399200;
+    let mut tx = create_transaction(vec_tx_in, &output_address, amount);
 
     // sign tx
-    let prevouts = Prevouts::One(0, prev_tx[0].output[0].clone());
-    tx = sign_tx(secp, tx, &prevouts, &bob_script, &bob, tap_info, internal);
+
+    // TODO: function that picks the wanted prev_tx, in theory it should be only one.
+    // in practice
+    // multiple ins because someone sent funds to the address for malicious purposses to pick a lower amount instead
+    // => always pick the heightest amount OR add all the amounts
+    let prevouts = Prevouts::One(0, prev_tx[3].output[0].clone());
+    println!("prevouts {:?}", prevouts);
+    tx = sign_tx(
+        secp,
+        &tx,
+        &prevouts,
+        &bob_script,
+        &bob,
+        &tap_info,
+        &internal,
+        &preimage,
+    );
+
     // broadcast tx
     let tx_id = client.transaction_broadcast(&tx).unwrap();
     println!("transaction hash: {}", tx_id.to_string());
