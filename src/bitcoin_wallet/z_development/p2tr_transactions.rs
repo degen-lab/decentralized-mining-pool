@@ -39,6 +39,10 @@ fn create_branch_1(alice_public_key: &XOnlyPublicKey) -> bitcoin::Script {
         .push_opcode(all::OP_CHECKSIG)
         .into_script();
 
+    // the x blocks are relative to the deployment moment
+    // to make scripts different, can be used the fixed time and provided the exact block when to unlock
+    // will be needed a method to communicate between miners so that the notifier knows which scripts it should include
+
     Script::from_hex(
         "029000b275209997a497d964fc1a62885b05a51166a65a90df00492c8d7cf61d6accf54803beac",
     )
@@ -72,7 +76,6 @@ fn create_tree(
     branch_1: &Script,
     branch_2: &Script,
 ) -> (bitcoin::util::taproot::TaprootSpendInfo, bitcoin::Address) {
-    // TODO: check if &branch_1.clone() is same value as bob_script.clone() on main file
     let builder =
         TaprootBuilder::with_huffman_tree(vec![(1, branch_1.clone()), (1, branch_2.clone())])
             .unwrap();
@@ -85,7 +88,7 @@ fn create_tree(
         .finalize(secp, internal_public_key)
         .unwrap();
 
-    let merkle_root = tap_info.merkle_root();
+    let merkle_root = tap_info.merkle_root(); // not used here
 
     let address = Address::p2tr(
         secp,
@@ -95,12 +98,6 @@ fn create_tree(
     );
 
     return (tap_info, address);
-
-    // TODO: write next funcitons, come back to see what to add to return here
-    // return:
-    // address
-    // tap_tree ?
-    // what else ?
 }
 
 // working
@@ -130,18 +127,97 @@ fn get_prev_txs(
     return (vec_tx_in, prev_tx);
 }
 
+fn get_total_available_amount(prev_tx: &Vec<Transaction>) -> u64 {
+    // let mut amount = 0;
+    // for tx in prev_tx {
+    //     for out in &tx.output {
+    //         amount += out.value;
+    //     }
+    // }
+    // amount
+    prev_tx
+        .iter()
+        .flat_map(|tx| tx.output.iter())
+        .map(|out| out.value)
+        .sum()
+    // TODO: filter only for amounts owned by address
+}
+
+fn get_best_prev_to_spend_index(prev_tx: &Vec<Transaction>, address: &Address) -> (u64, u64) {
+    // prev_tx
+    //     .iter()
+    //     .enumerate()
+    //     .filter(|(_, tx)| {
+    //         tx.output
+    //             .iter()
+    //             .any(|out| out.script_pubkey.to_string().contains(&address.to_owned()))
+    //     })
+    //     .max_by_key(|&(_, tx)| {
+    //         tx.output
+    //             .iter()
+    //             .filter(|out| out.script_pubkey.to_string().contains(&address.to_owned()))
+    //             .map(|out| out.value)
+    //             .sum::<u64>()
+    //     })
+    //     .map(|(idx, _)| idx);
+
+    // TODO: rewrite nicer with iterators
+    let mut max_amount = 0;
+    let mut i_tx: u64 = 0;
+    let mut j_out: u64 = 0;
+    let mut max_tx: u64 = 0;
+    let mut max_out: u64 = 0;
+    println!("address: {}", address.script_pubkey());
+    for tx in prev_tx {
+        j_out = 0;
+        for out in &tx.output {
+            println!("script pub key: {}", out.script_pubkey);
+            if out.script_pubkey.eq(&address.script_pubkey()) && out.value > max_amount {
+                max_amount = out.value;
+                max_tx = i_tx;
+                max_out = j_out;
+            }
+            j_out += 1;
+        }
+        i_tx += 1;
+    }
+    (max_tx, max_out)
+}
+
+fn get_best_amount(prev_tx: &Vec<Transaction>, tx_index: usize, out_index: usize) -> u64 {
+    prev_tx[tx_index].output[out_index].value
+}
+
+fn create_prev_outputs(prev_tx: &Vec<TxIn>) -> Vec<TxIn> {
+    let mut prev_outputs: Vec<TxIn> = vec![];
+    for tx in prev_tx {
+        prev_outputs.push(TxIn {
+            previous_output: tx.previous_output.clone(),
+            script_sig: Script::new(),
+            sequence: Sequence(0xFFFFFFFF),
+            witness: Witness::default(),
+        })
+    }
+    prev_outputs
+}
+
 // working
-fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: &Address, amount: u64) -> Transaction {
+fn create_transaction(
+    vec_tx_in: &Vec<TxIn>,
+    output_address: &Address,
+    amount: u64,
+    tx_index: usize,
+) -> Transaction {
     Transaction {
         version: 2,
         lock_time: PackedLockTime(0),
         input: vec![TxIn {
-            previous_output: vec_tx_in[3].previous_output.clone(), //TODO: change this [3] for general case
+            previous_output: vec_tx_in[tx_index].previous_output.clone(),
             script_sig: Script::new(),
             sequence: Sequence(0xFFFFFFFF),
             witness: Witness::default(),
         }],
-
+        // input: create_prev_outputs(vec_tx_in), // if all the input txs are used
         output: vec![TxOut {
             value: amount,
             // Address::from_str(
@@ -152,6 +228,12 @@ fn create_transaction(vec_tx_in: Vec<TxIn>, output_address: &Address, amount: u6
             script_pubkey: output_address.script_pubkey(), // where funds are going
         }],
     }
+}
+
+fn prev_outs_txout(prev: &Vec<Transaction>) -> Vec<TxOut> {
+    prev.iter()
+        .flat_map(|tx| tx.output.clone())
+        .collect::<Vec<TxOut>>()
 }
 
 fn sign_tx(
@@ -258,26 +340,42 @@ pub fn test_main() {
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
     let (vec_tx_in, prev_tx) = get_prev_txs(&client, &address);
 
-    // now it is picked manually the highest value
-    // TODO: add all the inputs from the script and send that amount of funds
-    println!("prev_tx {:?}", prev_tx);
-
     // creates tx
     let output_address =
         Address::from_str("tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z")
             .unwrap();
 
-    // TODO: as decribed above, pick amount using the tapscript key_signed way of adding the funds from all prevouts
-    let amount = 399200;
-    let mut tx = create_transaction(vec_tx_in, &output_address, amount);
+    // let total = get_total_available_amount(&prev_tx);
+    // gets the best prev out to spend and saves the index of the tx and of the output
+    let (best_prev_tx_index, best_prev_out_index) =
+        get_best_prev_to_spend_index(&prev_tx, &address);
+
+    let total = get_best_amount(
+        &prev_tx,
+        best_prev_tx_index as usize,
+        best_prev_out_index as usize,
+    );
+    println!("total {}", total);
+
+    let fees = 400;
+    let amount = total - fees;
+    println!("amount this {}", amount);
+    let mut tx = create_transaction(
+        &vec_tx_in,
+        &output_address,
+        amount,
+        best_prev_tx_index as usize,
+    );
 
     // sign tx
+    let prevouts = Prevouts::One(
+        0,
+        prev_tx[best_prev_tx_index as usize].output[best_prev_out_index as usize].clone(),
+    );
 
-    // TODO: function that picks the wanted prev_tx, in theory it should be only one.
-    // in practice
-    // multiple ins because someone sent funds to the address for malicious purposses to pick a lower amount instead
-    // => always pick the heightest amount OR add all the amounts
-    let prevouts = Prevouts::One(0, prev_tx[3].output[0].clone());
+    // should sign all prevouts
+    // let prev_out_tx_total = prev_outs_txout(&prev_tx);
+    // let prevouts = Prevouts::All(&prev_out_tx_total);
     println!("prevouts {:?}", prevouts);
     tx = sign_tx(
         secp,
