@@ -143,45 +143,46 @@ fn get_total_available_amount(prev_tx: &Vec<Transaction>) -> u64 {
     // TODO: filter only for amounts owned by address
 }
 
-fn get_best_prev_to_spend_index(prev_tx: &Vec<Transaction>, address: &Address) -> (u64, u64) {
-    // prev_tx
-    //     .iter()
-    //     .enumerate()
-    //     .filter(|(_, tx)| {
-    //         tx.output
-    //             .iter()
-    //             .any(|out| out.script_pubkey.to_string().contains(&address.to_owned()))
-    //     })
-    //     .max_by_key(|&(_, tx)| {
-    //         tx.output
-    //             .iter()
-    //             .filter(|out| out.script_pubkey.to_string().contains(&address.to_owned()))
-    //             .map(|out| out.value)
-    //             .sum::<u64>()
-    //     })
-    //     .map(|(idx, _)| idx);
-
-    // TODO: rewrite nicer with iterators
+fn get_best_prev_to_spend_index(prev_tx: &Vec<Transaction>, address: &Address) -> (usize, usize) {
     let mut max_amount = 0;
-    let mut i_tx: u64 = 0;
-    let mut j_out: u64 = 0;
-    let mut max_tx: u64 = 0;
-    let mut max_out: u64 = 0;
-    println!("address: {}", address.script_pubkey());
-    for tx in prev_tx {
-        j_out = 0;
-        for out in &tx.output {
-            println!("script pub key: {}", out.script_pubkey);
-            if out.script_pubkey.eq(&address.script_pubkey()) && out.value > max_amount {
-                max_amount = out.value;
-                max_tx = i_tx;
-                max_out = j_out;
-            }
-            j_out += 1;
-        }
-        i_tx += 1;
-    }
-    (max_tx, max_out)
+    // let mut i_tx: u64 = 0;
+    // let mut j_out: u64 = 0;
+    // let mut max_tx: u64 = 0;
+    // let mut max_out: u64 = 0;
+    // println!("address: {}", address.script_pubkey());
+    // for tx in prev_tx {
+    //     j_out = 0;
+    //     for out in &tx.output {
+    //         println!("script pub key: {}", out.script_pubkey);
+    //         if out.script_pubkey.eq(&address.script_pubkey()) && out.value > max_amount {
+    //             max_amount = out.value;
+    //             max_tx = i_tx;
+    //             max_out = j_out;
+    //         }
+    //         j_out += 1;
+    //     }
+    //     i_tx += 1;
+    // }
+    // (max_tx, max_out)
+
+    prev_tx
+        .iter()
+        .enumerate()
+        .flat_map(|(i_tx, tx)| {
+            tx.output
+                .iter()
+                .enumerate()
+                .filter_map(move |(j_out, out)| {
+                    if out.script_pubkey.eq(&address.script_pubkey()) && out.value > max_amount {
+                        max_amount = out.value;
+                        Some((i_tx, j_out))
+                    } else {
+                        None
+                    }
+                })
+        })
+        .last()
+        .unwrap_or((0, 0))
 }
 
 fn get_best_amount(prev_tx: &Vec<Transaction>, tx_index: usize, out_index: usize) -> u64 {
@@ -357,7 +358,7 @@ pub fn test_main() {
     );
     println!("total {}", total);
 
-    let fees = 400;
+    let fees = 300;
     let amount = total - fees;
     println!("amount this {}", amount);
     let mut tx = create_transaction(
