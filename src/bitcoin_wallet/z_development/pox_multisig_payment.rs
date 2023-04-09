@@ -11,7 +11,7 @@ use bitcoin::{
     Address, KeyPair, PackedLockTime, SchnorrSig, SchnorrSighashType, Script, Sequence,
     Transaction, TxIn, TxOut, Witness,
 };
-use electrum_client::Client;
+use electrum_client::{Client, ElectrumApi};
 
 use crate::bitcoin_wallet::z_development::helpers;
 
@@ -99,6 +99,12 @@ fn test_to_pox() {
         vec_tx_in2[best_prev_out_index2].clone(),
         vec_tx_in3[best_prev_out_index3].clone(),
     ];
+    let prev_tx_outs = vec![
+        prev_tx1[best_prev_tx_index1 as usize].output[best_prev_out_index1 as usize].clone(),
+        prev_tx2[best_prev_tx_index2 as usize].output[best_prev_out_index2 as usize].clone(),
+        prev_tx3[best_prev_tx_index3 as usize].output[best_prev_out_index3 as usize].clone(),
+    ];
+    println!("prev tx list: {:?}", prev_tx_outs);
 
     // let total = get_total_available_amount(&prev_tx);
     let total1 = helpers::get_best_amount(
@@ -150,10 +156,11 @@ fn test_to_pox() {
     // broadcast transaction
 
     // sign tx
-    // let prevouts = Prevouts::One(
+    // let prevouts_old = Prevouts::One(
     //     0,
     //     prev_tx[best_prev_tx_index as usize].output[best_prev_out_index as usize].clone(),
     // );
+    let prevouts = Prevouts::All(&prev_tx_outs);
 
     // should sign all prevouts
     // let prev_out_tx_total = prev_outs_txout(&prev_tx);
@@ -162,19 +169,19 @@ fn test_to_pox() {
 
     // println!("tx before signing {:?}", tx);
 
-    // tx = sign_tx(
-    //     secp,
-    //     &tx,
-    //     &prevouts,
-    //     &bob_script,
-    //     &bob,
-    //     &tap_info,
-    //     &internal,
-    // );
+    tx = sign_tx(
+        secp,
+        &tx,
+        &prevouts,
+        &bob_script,
+        &bob,
+        &[tap_info1, tap_info2, tap_info3],
+        &internal,
+    );
 
-    // // broadcast tx
-    // // let tx_id = client.transaction_broadcast(&tx).unwrap();
-    // println!("transaction hash: {}", tx_id.to_string());
+    // broadcast tx
+    let tx_id = client.transaction_broadcast(&tx).unwrap();
+    println!("transaction hash: {}", tx_id.to_string());
 }
 
 fn create_transaction_n_inputs_2_outputs(
@@ -226,45 +233,56 @@ fn sign_tx(
     prevouts: &Prevouts<TxOut>,
     script: &Script,
     bob: &KeyPair,
-    tap_info: &TaprootSpendInfo,
+    tap_infos: &[TaprootSpendInfo],
     internal: &KeyPair,
 ) -> Transaction {
     let mut tx = tx_ref.clone();
-    let sighash_sig = SighashCache::new(&mut tx.clone())
-        .taproot_script_spend_signature_hash(
-            0,
-            prevouts,
-            ScriptPath::with_defaults(script),
-            SchnorrSighashType::AllPlusAnyoneCanPay,
-        )
-        .unwrap();
-    // println!("sighash_sig: {}", sighash_sig);
-    // println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
-    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
-    // println!("sig: {}", sig);
+    let mut sigs = Vec::new();
+    let mut witnesses = Vec::new();
 
-    let actual_control = tap_info
-        .control_block(&(script.clone(), LeafVersion::TapScript))
-        .unwrap();
+    for (i, (tap_info)) in tap_infos.iter().enumerate() {
+        let sighash_sig = SighashCache::new(&mut tx.clone())
+            .taproot_script_spend_signature_hash(
+                i,
+                prevouts,
+                ScriptPath::with_defaults(&script.clone()),
+                SchnorrSighashType::AllPlusAnyoneCanPay,
+            )
+            .unwrap();
+        let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
+
+        let actual_control = tap_info
+            .control_block(&(script.clone(), LeafVersion::TapScript))
+            .unwrap();
+        let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
+        let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
+        let res =
+            actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script);
+
+        println!("result res is: {}", res);
+
+        let schnorr_sig = SchnorrSig {
+            sig,
+            hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay,
+        };
+
+        sigs.push(sig);
+
+        witnesses.push(Witness::from_vec(vec![
+            schnorr_sig.to_vec(),
+            script.to_bytes(),
+            actual_control.serialize(),
+        ]));
+    }
+
     // println!("actual_control: {:#?}", actual_control);
 
     // verify commitment
-    let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
-    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
-    let res = actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script);
 
-    let schnorr_sig = SchnorrSig {
-        sig,
-        hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay,
-    };
-
-    let wit = Witness::from_vec(vec![
-        schnorr_sig.to_vec(),
-        script.to_bytes(),
-        actual_control.serialize(),
-    ]);
-
-    tx.input[0].witness = wit;
+    for (input, witness) in tx.input.iter_mut().zip(witnesses) {
+        input.witness = witness;
+    }
+    println!("the complete tx is: {:#?}", tx);
 
     tx
 }
