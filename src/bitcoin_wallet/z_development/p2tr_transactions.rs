@@ -67,11 +67,10 @@ fn create_transaction(
 ) -> Transaction {
     Transaction {
         version: 2,
-        lock_time: PackedLockTime((unlock_block + 1) as u32),
+        lock_time: PackedLockTime(unlock_block as u32),
         // lock_time: LockTime::from_height((unlock_block + 1) as u32)
         //     .unwrap()
         //     .into(),
-        // -1 , +1
         input: vec![TxIn {
             previous_output: vec_tx_in[tx_index].previous_output.clone(),
             script_sig: Script::new(),
@@ -102,7 +101,7 @@ fn sign_tx(
     tx_ref: &Transaction,
     prevouts: &Prevouts<TxOut>,
     script: &Script,
-    bob: &KeyPair,
+    user_key_pair: &KeyPair,
     tap_info: &TaprootSpendInfo,
     internal: &KeyPair,
 ) -> Transaction {
@@ -117,7 +116,7 @@ fn sign_tx(
         .unwrap();
     // println!("sighash_sig: {}", sighash_sig);
     // println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
-    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
+    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), user_key_pair);
     // println!("sig: {}", sig);
 
     let actual_control = tap_info
