@@ -28,22 +28,6 @@ use electrum_client::{Client, ElectrumApi};
 
 use crate::bitcoin_wallet::z_development::helpers;
 
-fn get_total_available_amount(prev_tx: &Vec<Transaction>) -> u64 {
-    // let mut amount = 0;
-    // for tx in prev_tx {
-    //     for out in &tx.output {
-    //         amount += out.value;
-    //     }
-    // }
-    // amount
-    prev_tx
-        .iter()
-        .flat_map(|tx| tx.output.iter())
-        .map(|out| out.value)
-        .sum()
-    // TODO: filter only for amounts owned by address
-}
-
 fn create_prev_outputs(prev_tx: &Vec<TxIn>) -> Vec<TxIn> {
     let mut prev_outputs: Vec<TxIn> = vec![];
     for tx in prev_tx {
@@ -58,6 +42,8 @@ fn create_prev_outputs(prev_tx: &Vec<TxIn>) -> Vec<TxIn> {
 }
 
 // working
+// this will be used only with alice
+// bob is used from pox_multisig-payment
 fn create_transaction(
     vec_tx_in: &Vec<TxIn>,
     output_address: &Address,
@@ -77,23 +63,11 @@ fn create_transaction(
             sequence: Sequence(0xFFFFFFFF),
             witness: Witness::default(),
         }],
-        // input: create_prev_outputs(vec_tx_in), // if all the input txs are used
         output: vec![TxOut {
             value: amount,
-            // Address::from_str(
-            //   //     "tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z",
-            //   // )
-            //   // .unwrap()
-            //   // .script_pubkey(),
             script_pubkey: output_address.script_pubkey(), // where funds are going
         }],
     }
-}
-
-fn prev_outs_txout(prev: &Vec<Transaction>) -> Vec<TxOut> {
-    prev.iter()
-        .flat_map(|tx| tx.output.clone())
-        .collect::<Vec<TxOut>>()
 }
 
 fn sign_tx(
@@ -127,7 +101,7 @@ fn sign_tx(
     // verify commitment
     let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
     let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
-    let res = actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script);
+    assert!(actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script));
 
     let schnorr_sig = SchnorrSig {
         sig,
@@ -193,12 +167,13 @@ pub fn test_main() {
     let alice_script = helpers::create_script_refund(&alice_public_key, unlock_block);
     let bob_script = helpers::create_script_pox(&bob_public_key);
 
-    println!("alice script {}", alice_script.to_string());
-    println!("bob script {}", bob_script.to_string());
+    println!("alice script {}", alice_script);
+    println!("bob script {}", bob_script);
 
     let (tap_info, address) = helpers::create_tree(&secp, &internal, &alice_script, &bob_script);
 
     println!("address {:?}", address);
+
     println!("current block heigh {}", block_height);
     let (vec_tx_in, prev_tx) = helpers::get_prev_txs(&client, &address);
 
@@ -210,14 +185,10 @@ pub fn test_main() {
 
     // gets the best prev out to spend and saves the index of the tx and of the output
     let (best_prev_tx_index, best_prev_out_index) =
-        helpers::get_best_prev_to_spend_index(&prev_tx, &address);
+        helpers::get_best_prev_to_spend_index(prev_tx.clone(), &address);
 
     // let total = get_total_available_amount(&prev_tx);
-    let total = helpers::get_best_amount(
-        &prev_tx,
-        best_prev_tx_index as usize,
-        best_prev_out_index as usize,
-    );
+    let total = helpers::get_best_amount(&prev_tx, best_prev_tx_index, best_prev_out_index);
     println!(
         "is lock height {:?}",
         LockTime::from_height(block_height as u32)
@@ -233,46 +204,43 @@ pub fn test_main() {
         &vec_tx_in,
         &output_address,
         amount,
-        best_prev_tx_index as usize,
+        best_prev_tx_index,
         block_height,
     );
 
     // sign tx
     let prevouts = Prevouts::One(
         0,
-        prev_tx[best_prev_tx_index as usize].output[best_prev_out_index as usize].clone(),
+        prev_tx[best_prev_tx_index].output[best_prev_out_index].clone(),
     );
 
-    // should sign all prevouts
-    // let prev_out_tx_total = prev_outs_txout(&prev_tx);
-    // let prevouts = Prevouts::All(&prev_out_tx_total);
     println!("prevouts {:?}", prevouts);
 
     println!("tx before signing {:?}", tx);
 
     // alice signing method - not working
-    tx = sign_tx(
-        secp,
-        &tx,
-        &prevouts,
-        &alice_script,
-        &alice,
-        &tap_info,
-        &internal,
-    );
-
-    // bob signing method
     // tx = sign_tx(
     //     secp,
     //     &tx,
     //     &prevouts,
-    //     &bob_script,
-    //     &bob,
+    //     &alice_script,
+    //     &alice,
     //     &tap_info,
     //     &internal,
     // );
 
+    // bob signing method
+    tx = sign_tx(
+        secp,
+        &tx,
+        &prevouts,
+        &bob_script,
+        &bob,
+        &tap_info,
+        &internal,
+    );
+
     // broadcast tx
     let tx_id = client.transaction_broadcast(&tx).unwrap();
-    println!("transaction hash: {}", tx_id.to_string());
+    println!("transaction hash: {}", tx_id);
 }

@@ -15,12 +15,46 @@ use electrum_client::{Client, ElectrumApi};
 
 use crate::bitcoin_wallet::z_development::helpers;
 
+// DESCRIPTION
 // sent multiple transactions
+// have three different alice and 1 bob
+// create three taproot scripts and get the p2tr addresses
+// transfer 0.3 amount to each of the 3 scripts
+
+// take the inputs and transfer them to third bitcoin address ( from the electrum wallet )
+// tb1qcqjutfc7gehglpre2feq8drufj8kyd7ue65ewl
+
+// create transaction
+// input 3 scripts amounts
+// output tb1qcqjutfc7gehglpre2feq8drufj8kyd7ue65ewl
+
+// sign each transaction using bob
+// all should be signed in the same transaction
+
+// broadcast transaction
+
+/// TODO: has to be parsed to the notifier
+/// tap_infos and p2tr_addresses
+/// the rest is done by the notifier
+
 #[test]
 fn test_to_pox() {
     println!("start test to pox");
     let secp = Secp256k1::new();
+    /// This will be parsed by participants to the notifier
     // predefined data
+    // data extracted from predefined
+    // TODO: will use directly the public key for FORST, no access to its private key before hand
+    let alice_secrets = [
+        SecretKey::from_str("1d799760009ca66cb0ad05a80e5b781deabf0550923fad7ad4417f61702f6353")
+            .unwrap(),
+        SecretKey::from_str("91436bd90d9cde7ba3162375b7692ae3f22ad01586cb4520bffae48d3a480f6a")
+            .unwrap(),
+        SecretKey::from_str("25c69df27df3f630daa05a344679474f383bf49e5c577354169f4858484abfe3")
+            .unwrap(),
+    ];
+    let n = 3; // number of miners
+
     let alice1_secret =
         SecretKey::from_str("1d799760009ca66cb0ad05a80e5b781deabf0550923fad7ad4417f61702f6353")
             .unwrap();
@@ -37,11 +71,7 @@ fn test_to_pox() {
     let internal_secret =
         SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
             .unwrap();
-    // let preimage =
-    //     Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
 
-    // data extracted from predefined
-    // TODO: will use directly the public key for FORST, no access to its private key before hand
     let alice1 = KeyPair::from_secret_key(&secp, &alice1_secret);
     let alice2 = KeyPair::from_secret_key(&secp, &alice2_secret);
     let alice3 = KeyPair::from_secret_key(&secp, &alice3_secret);
@@ -52,7 +82,6 @@ fn test_to_pox() {
     let (bob_public_key, _) = bob.x_only_public_key();
     let internal = KeyPair::from_secret_key(&secp, &internal_secret);
     let (internal_public_key, _) = internal.x_only_public_key();
-    // let preimage_hash = bitcoin::hashes::sha256::Hash::hash(&preimage);
 
     println!("alice1 public key {}", alice1.public_key());
     println!("alice2 public key {}", alice2.public_key());
@@ -63,10 +92,9 @@ fn test_to_pox() {
     // println!("preimage {}", preimage_hash.to_string());
 
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
-    // get the current block height using the client
-    let block_height = helpers::get_current_block_height(&client);
 
-    // hardcoded, always the same value
+    // get the current block height using the client
+    // hardcoded, the value for the block_height unlock of the scripts used to send to the PoX
     let unlock_block = 2427365;
 
     let alice1_script = helpers::create_script_refund(&alice1_public_key, unlock_block);
@@ -82,48 +110,48 @@ fn test_to_pox() {
     println!("address2 {:?}", address2); // tb1p3hjq6rr3errpwr4tj8s0dz96xyfj9dmq2tax78ag7pcxy497xe9qd6ye6d
     println!("address3 {:?}", address3); // tb1p9n67g6gd6wlnp04juprrhf5xu2020av5rueu793vgwevuwkaznlqkc40k3
 
-    let (vec_tx_in1, prev_tx1) = helpers::get_prev_txs(&client, &address1);
-    let (vec_tx_in2, prev_tx2) = helpers::get_prev_txs(&client, &address2);
-    let (vec_tx_in3, prev_tx3) = helpers::get_prev_txs(&client, &address3);
+    // This will be received by the notifier
+    // and processed by him
+    let tap_infos = vec![tap_info1, tap_info2, tap_info3];
+    let p2tr_addresses = vec![address1, address2, address3];
 
-    let (best_prev_tx_index1, best_prev_out_index1) =
-        helpers::get_best_prev_to_spend_index(&prev_tx1, &address1);
-    let (best_prev_tx_index2, best_prev_out_index2) =
-        helpers::get_best_prev_to_spend_index(&prev_tx2, &address2);
-    let (best_prev_tx_index3, best_prev_out_index3) =
-        helpers::get_best_prev_to_spend_index(&prev_tx3, &address3);
+    // for each p2tr_address we need to get the prev_txs and add it to a vec!
+
+    let (vec_vec_tx_ins, vec_prev_txs): (Vec<_>, Vec<_>) = p2tr_addresses
+        .iter()
+        .map(|address| helpers::get_prev_txs(&client, &address))
+        .unzip();
+
+    let (best_prev_tx_indexes, best_prev_out_indexes): (Vec<usize>, Vec<usize>) = vec_prev_txs
+        .iter()
+        .zip(p2tr_addresses.iter())
+        .map(|(prev_tx, address)| helpers::get_best_prev_to_spend_index(prev_tx.to_vec(), address))
+        .unzip();
 
     // all the inputs with the best tx index from each miner
-    let vec_tx_in = vec![
-        vec_tx_in1[best_prev_out_index1].clone(),
-        vec_tx_in2[best_prev_out_index2].clone(),
-        vec_tx_in3[best_prev_out_index3].clone(),
-    ];
-    let prev_tx_outs = vec![
-        prev_tx1[best_prev_tx_index1 as usize].output[best_prev_out_index1 as usize].clone(),
-        prev_tx2[best_prev_tx_index2 as usize].output[best_prev_out_index2 as usize].clone(),
-        prev_tx3[best_prev_tx_index3 as usize].output[best_prev_out_index3 as usize].clone(),
-    ];
+    let vec_tx_ins = vec_vec_tx_ins
+        .iter()
+        .enumerate()
+        .map(|(i, vec_tx_in)| vec_tx_in[best_prev_tx_indexes[i]].clone())
+        .collect::<Vec<TxIn>>();
+
+    let prev_tx_outs = vec_prev_txs
+        .iter()
+        .enumerate()
+        .map(|(i, prev_tx)| {
+            prev_tx[best_prev_tx_indexes[i]].output[best_prev_out_indexes[i]].clone()
+        })
+        .collect::<Vec<TxOut>>();
+
     println!("prev tx list: {:?}", prev_tx_outs);
 
-    // let total = get_total_available_amount(&prev_tx);
-    let total1 = helpers::get_best_amount(
-        &prev_tx1,
-        best_prev_tx_index1 as usize,
-        best_prev_out_index1 as usize,
-    );
-    let total2 = helpers::get_best_amount(
-        &prev_tx2,
-        best_prev_tx_index2 as usize,
-        best_prev_out_index2 as usize,
-    );
-    let total3 = helpers::get_best_amount(
-        &prev_tx3,
-        best_prev_tx_index3 as usize,
-        best_prev_out_index3 as usize,
-    );
-
-    let total = total1 + total2 + total3;
+    let total: u64 = vec_prev_txs
+        .iter()
+        .enumerate()
+        .map(|(i, prev_tx)| {
+            helpers::get_best_amount(prev_tx, best_prev_tx_indexes[i], best_prev_out_indexes[i])
+        })
+        .sum();
 
     let fees = 500;
     let amount = total - fees;
@@ -132,41 +160,15 @@ fn test_to_pox() {
     let output_address2 = Address::from_str("tb1ql8tz262xlut4uqyyj98d22k6esuu97ayd4ghax").unwrap();
 
     let mut tx = create_transaction_n_inputs_2_outputs(
-        vec_tx_in,
+        vec_tx_ins,
         &output_address1,
         &output_address2,
         amount,
-        block_height,
     );
 
-    // have three different alice and 1 bob
-    // create thress taproot scripts and get the p2tr addresses
-    // transfer 0.3 amount to each of the 3 scripts
-
-    // take the inputs and transfer them to third bitcoin address ( from the electrum wallet )
-    // tb1qcqjutfc7gehglpre2feq8drufj8kyd7ue65ewl
-
-    // create transaction
-    // input 3 scripts amounts
-    // output tb1qcqjutfc7gehglpre2feq8drufj8kyd7ue65ewl
-
-    // sign each transaction using bob
-    // all should be signed in the same transaction
-
-    // broadcast transaction
-
     // sign tx
-    // let prevouts_old = Prevouts::One(
-    //     0,
-    //     prev_tx[best_prev_tx_index as usize].output[best_prev_out_index as usize].clone(),
-    // );
     let prevouts = Prevouts::All(&prev_tx_outs);
-
-    // should sign all prevouts
-    // let prev_out_tx_total = prev_outs_txout(&prev_tx);
-    // let prevouts = Prevouts::All(&prev_out_tx_total);
     // println!("prevouts {:?}", prevouts);
-
     // println!("tx before signing {:?}", tx);
 
     tx = sign_tx(
@@ -175,13 +177,25 @@ fn test_to_pox() {
         &prevouts,
         &bob_script,
         &bob,
-        &[tap_info1, tap_info2, tap_info3],
+        &tap_infos,
         &internal,
     );
 
     // broadcast tx
     let tx_id = client.transaction_broadcast(&tx).unwrap();
-    println!("transaction hash: {}", tx_id.to_string());
+    println!("transaction hash: {}", tx_id);
+}
+
+fn create_txins_array(vec_tx_in: Vec<TxIn>) -> Vec<TxIn> {
+    vec_tx_in
+        .iter()
+        .map(|tx_in| TxIn {
+            previous_output: tx_in.previous_output,
+            script_sig: Script::new(),
+            sequence: Sequence(0xFFFFFFFF),
+            witness: Witness::default(),
+        })
+        .collect()
 }
 
 fn create_transaction_n_inputs_2_outputs(
@@ -189,31 +203,11 @@ fn create_transaction_n_inputs_2_outputs(
     output_address1: &Address,
     output_address2: &Address,
     amount: u64,
-    unlock_block: usize,
 ) -> Transaction {
     Transaction {
         version: 2,
         lock_time: PackedLockTime(0),
-        input: vec![
-            TxIn {
-                previous_output: vec_tx_in[0].previous_output,
-                script_sig: Script::new(),
-                sequence: Sequence(0xFFFFFFFF),
-                witness: Witness::default(),
-            },
-            TxIn {
-                previous_output: vec_tx_in[1].previous_output,
-                script_sig: Script::new(),
-                sequence: Sequence(0xFFFFFFFF),
-                witness: Witness::default(),
-            },
-            TxIn {
-                previous_output: vec_tx_in[2].previous_output,
-                script_sig: Script::new(),
-                sequence: Sequence(0xFFFFFFFF),
-                witness: Witness::default(),
-            },
-        ],
+        input: create_txins_array(vec_tx_in),
         output: vec![
             TxOut {
                 value: amount / 2,
@@ -232,7 +226,7 @@ fn sign_tx(
     tx_ref: &Transaction,
     prevouts: &Prevouts<TxOut>,
     script: &Script,
-    bob: &KeyPair,
+    user_key_pair: &KeyPair,
     tap_infos: &[TaprootSpendInfo],
     internal: &KeyPair,
 ) -> Transaction {
@@ -249,17 +243,17 @@ fn sign_tx(
                 SchnorrSighashType::AllPlusAnyoneCanPay,
             )
             .unwrap();
-        let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), bob);
+        let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), user_key_pair);
 
         let actual_control = tap_info
             .control_block(&(script.clone(), LeafVersion::TapScript))
             .unwrap();
         let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
         let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
-        let res =
-            actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script);
 
-        println!("result res is: {}", res);
+        // verify commitment
+        assert!(actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script));
+        // println!("actual_control: {:#?}", actual_control);
 
         let schnorr_sig = SchnorrSig {
             sig,
@@ -275,14 +269,10 @@ fn sign_tx(
         ]));
     }
 
-    // println!("actual_control: {:#?}", actual_control);
-
-    // verify commitment
-
     for (input, witness) in tx.input.iter_mut().zip(witnesses) {
         input.witness = witness;
     }
-    println!("the complete tx is: {:#?}", tx);
+    // println!("the complete tx is: {:#?}", tx);
 
     tx
 }

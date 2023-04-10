@@ -113,7 +113,7 @@ pub fn get_best_amount(prev_tx: &Vec<Transaction>, tx_index: usize, out_index: u
 }
 
 pub fn get_best_prev_to_spend_index(
-    prev_tx: &Vec<Transaction>,
+    prev_tx: Vec<Transaction>,
     address: &Address,
 ) -> (usize, usize) {
     let mut max_amount = 0;
@@ -155,4 +155,20 @@ pub fn get_best_prev_to_spend_index(
         })
         .last()
         .unwrap_or((0, 0))
+}
+
+fn get_total_available_amount(prev_tx: &Vec<Transaction>) -> u64 {
+    // let mut amount = 0;
+    // for tx in prev_tx {
+    //     for out in &tx.output {
+    //         amount += out.value;
+    //     }
+    // }
+    // amount
+    prev_tx
+        .iter()
+        .flat_map(|tx| tx.output.iter())
+        .map(|out| out.value)
+        .sum()
+    // TODO: filter only for amounts owned by address
 }
