@@ -4,7 +4,6 @@ use std::ops::Add;
 use std::str::FromStr;
 use std::vec;
 
-use bincode::config::LittleEndian;
 use bitcoin::bech32::FromBase32;
 use bitcoin::blockdata::opcodes::all;
 use bitcoin::blockdata::script::Builder;
@@ -27,9 +26,9 @@ use bitcoin::{
 };
 use electrum_client::{Client, ElectrumApi};
 use miniscript::psbt::{PsbtExt, PsbtInputSatisfier};
-use miniscript::{Descriptor, DescriptorPublicKey, DescriptorTrait, Miniscript, Tap, ToPublicKey};
+use miniscript::{Descriptor, DescriptorPublicKey, Miniscript, Tap, ToPublicKey};
 
-pub fn Test() {
+pub fn Test_tap_with_tap() {
     let secp = Secp256k1::new();
     let alice_secret =
         SecretKey::from_str("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90")
@@ -41,12 +40,14 @@ pub fn Test() {
         SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
             .unwrap();
 
-    let alice = KeyPair::from_secret_key(&secp, alice_secret);
-    let bob = KeyPair::from_secret_key(&secp, bob_secret);
-    let internal = KeyPair::from_secret_key(&secp, internal_secret);
+    let alice = KeyPair::from_secret_key(&secp, &alice_secret);
+    let (alice_public_key, _) = alice.x_only_public_key();
+    let bob = KeyPair::from_secret_key(&secp, &bob_secret);
+    let (bob_public_key, _) = bob.x_only_public_key();
+    let internal = KeyPair::from_secret_key(&secp, &internal_secret);
+    let (internal_public_key, _) = internal.x_only_public_key();
     let preimage =
         Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
-
     let preimage_hash = bitcoin::hashes::sha256::Hash::hash(&preimage);
 
     println!("alice public key {}", alice.public_key());
@@ -64,7 +65,7 @@ pub fn Test() {
         .push_opcode(all::OP_SHA256)
         .push_slice(&preimage_hash)
         .push_opcode(all::OP_EQUALVERIFY)
-        .push_x_only_key(&bob.public_key())
+        .push_x_only_key(&bob_public_key)
         .push_opcode(all::OP_CHECKSIG)
         .into_script();
 
@@ -76,11 +77,12 @@ pub fn Test() {
 
     let tap_info = tap_tree
         .into_builder()
-        .finalize(&secp, internal.public_key())
+        .finalize(&secp, internal_public_key)
         .unwrap();
 
     let merkle_root = tap_info.merkle_root();
     let tweak_key_pair = internal.tap_tweak(&secp, merkle_root).into_inner();
+    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
 
     let address = Address::p2tr(
         &secp,
@@ -88,39 +90,46 @@ pub fn Test() {
         tap_info.merkle_root(),
         bitcoin::Network::Testnet,
     );
+    println!("address {}", address);
 
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
     let vec_tx_in = client
         .script_list_unspent(&address.script_pubkey())
         .unwrap()
         .iter()
-        .map(|l| {
-            return TxIn {
-                previous_output: OutPoint::new(l.tx_hash, l.tx_pos.try_into().unwrap()),
-                script_sig: Script::new(),
-                sequence: 0xFFFFFFFF,
-                witness: Witness::default(),
-            };
+        .map(|l| TxIn {
+            previous_output: OutPoint::new(l.tx_hash, l.tx_pos.try_into().unwrap()),
+            script_sig: Script::new(),
+            sequence: bitcoin::Sequence(0xFFFFFFFF),
+            witness: Witness::default(),
         })
         .collect::<Vec<TxIn>>();
 
-    let prev_tx = vec_tx_in
+    let prev_tx = vec_tx_in // it uses the txId, only one tx per transaction
         .iter()
         .map(|tx_id| client.transaction_get(&tx_id.previous_output.txid).unwrap())
         .collect::<Vec<Transaction>>();
+    let amount = 399200;
+    // tx is using the funds to send to a taproot address PoX address for our case
+
+    // println!("prev_tx {:?}", prev_tx);
 
     let mut tx = Transaction {
         version: 2,
-        lock_time: 0,
+        lock_time: bitcoin::PackedLockTime(0),
+        // we have 1 tx as txin
+        // TODO: in same style, create one that takes this from all participants and creates this tx to send to pox address
+        // TODO: take all inputs from the script when spending, not the amount of only one previous tx
         input: vec![TxIn {
             previous_output: vec_tx_in[0].previous_output.clone(),
             script_sig: Script::new(),
-            sequence: 0xFFFFFFFF,
+            sequence: bitcoin::Sequence(0xFFFFFFFF),
             witness: Witness::default(),
         }],
 
+        // we have 1 tx as txout
         output: vec![TxOut {
-            value: 300,
+            value: amount,
             script_pubkey: Address::from_str(
                 "tb1p5kaqsuted66fldx256lh3en4h9z4uttxuagkwepqlqup6hw639gskndd0z",
             )
@@ -128,7 +137,6 @@ pub fn Test() {
             .script_pubkey(),
         }],
     };
-
     let prevouts = Prevouts::One(0, prev_tx[0].output[0].clone());
 
     let sighash_sig = SighashCache::new(&mut tx.clone())
@@ -140,50 +148,68 @@ pub fn Test() {
         )
         .unwrap();
 
-    let key_sig = SighashCache::new(&mut tx.clone())
-        .taproot_key_spend_signature_hash(0, &prevouts, SchnorrSighashType::AllPlusAnyoneCanPay)
-        .unwrap();
+    // key signature not used, but functional
+    // TODO: find answer for bellow strange / malicious possible flow
+    // miners are singing the transaction spending from the scripts
+    // one miner key spends his funds beforehand
+    // the tx would not have enough funds to send to PoX
 
-    println!("key signing sighash {} ", key_sig);
+    // not used
+    // let key_sig = SighashCache::new(&mut tx.clone())
+    //     .taproot_key_spend_signature_hash(0, &prevouts, SchnorrSighashType::AllPlusAnyoneCanPay)
+    //     .unwrap();
+
+    // println!("key signing sighash {} ", key_sig);
 
     println!("script sighash {} ", sighash_sig);
 
+    println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
     let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), &bob);
+    println!("signature {}", sig);
 
     let actual_control = tap_info
         .control_block(&(bob_script.clone(), LeafVersion::TapScript))
         .unwrap();
-
+    println!("control block {:#?} ", actual_control);
+    // verifier for commitment
     let res =
-        actual_control.verify_taproot_commitment(&secp, tweak_key_pair.public_key(), &bob_script);
+        actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, &bob_script);
 
     println!("is taproot committed? {} ", res);
 
     println!("control block {} ", actual_control.serialize().to_hex());
 
-    let mut b_tree_map = BTreeMap::<ControlBlock, (Script, LeafVersion)>::default();
-    b_tree_map.insert(
-        actual_control.clone(),
-        (bob_script.clone(), LeafVersion::TapScript),
+    // construct tree based on bob script
+    // why default() instead of new() ?
+    // TODO: what is this tree for? not used
+    // let mut b_tree_map = BTreeMap::<ControlBlock, (Script, LeafVersion)>::default();
+    // b_tree_map.insert(
+    //     actual_control.clone(),
+    //     (bob_script.clone(), LeafVersion::TapScript),
+    // );
+    println!(
+        "tweak_key_pair_public_key: {:#?}",
+        tweak_key_pair_public_key
     );
-
     let schnorr_sig = SchnorrSig {
         sig,
         hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay,
     };
-
+    println!("schnorr_sig {:#?}", schnorr_sig);
     let wit = Witness::from_vec(vec![
         schnorr_sig.to_vec(),
-        preimage.clone(),
+        preimage.clone(), // TODO: remove on the new op_codes operations
         bob_script.to_bytes(),
         actual_control.serialize(),
     ]);
 
+    // println!("wit: {:#?}", wit);
     tx.input[0].witness = wit;
+    println!("tx: {:#?}", tx);
 
     println!("Address: {} ", address.to_string());
-
-    // this part fails fix me plz !!!
+    return;
+    // TODO: uncomment - this is working
     let tx_id = client.transaction_broadcast(&tx).unwrap();
     println!("transaction hash: {}", tx_id.to_string());
 

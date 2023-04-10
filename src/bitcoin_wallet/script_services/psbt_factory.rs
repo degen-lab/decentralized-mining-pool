@@ -25,7 +25,7 @@ where
 {
     let mut output_list = Vec::<Output>::new();
     let output_vec = get_output(output_vec_vec_func, &mut output_list);
-    return Box::new(move |api_call| {
+    Box::new(move |api_call| {
         let confirmed = api_call.script_get_balance();
         let previous_tx = api_call.contract_source();
         let tx_in = api_call.prev_input();
@@ -41,7 +41,7 @@ where
             input_vec.push(input);
         }
 
-        return PartiallySignedTransaction {
+        PartiallySignedTransaction {
             unsigned_tx,
             version: 2,
             xpub: BTreeMap::new(),
@@ -49,8 +49,8 @@ where
             unknown: BTreeMap::new(),
             inputs: input_vec,
             outputs: output_vec.clone(),
-        };
-    });
+        }
+    })
 }
 
 pub fn get_output<'a>(
