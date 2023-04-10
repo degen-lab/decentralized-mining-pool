@@ -1,0 +1,53 @@
+---
+id: 0
+name: Devnet deployment
+network: devnet
+stacks-node: "http://localhost:20443"
+bitcoin-node: "http://devnet:devnet@localhost:18443"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: balance
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 24870
+            path: contracts/balance.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: main-contract
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 386380
+            path: contracts/main-contract.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: main-contract-5-blocks
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 386360
+            path: contracts/main-contract-5-blocks.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: map-list
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 9950
+            path: contracts/map-list.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: map-numero
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 8390
+            path: contracts/map-numero.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: map-trait-1
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 172260
+            path: contracts/map-trait-1.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.1"

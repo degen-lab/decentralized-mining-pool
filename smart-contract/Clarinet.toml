@@ -1,0 +1,26 @@
+[project]
+name = 'DeMiPool'
+description = 'descentralized mining pool SC'
+authors = []
+telemetry = false
+cache_dir = '.cache'
+requirements = []
+
+[contracts.main-contract]
+path = 'contracts/main-contract.clar'
+clarity_version = 2
+epoch = 2.1
+
+[contracts.main-contract-5-blocks]
+path = 'contracts/main-contract-5-blocks.clar'
+clarity_version = 2
+epoch = 2.1
+
+[repl.analysis]
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
