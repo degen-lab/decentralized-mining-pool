@@ -219,26 +219,26 @@ pub fn test_main() {
     println!("tx before signing {:?}", tx);
 
     // alice signing method - not working
-    // tx = sign_tx(
-    //     secp,
-    //     &tx,
-    //     &prevouts,
-    //     &alice_script,
-    //     &alice,
-    //     &tap_info,
-    //     &internal,
-    // );
-
-    // bob signing method
     tx = sign_tx(
         secp,
         &tx,
         &prevouts,
-        &bob_script,
-        &bob,
+        &alice_script,
+        &alice,
         &tap_info,
         &internal,
     );
+
+    // bob signing method
+    // tx = sign_tx(
+    //     secp,
+    //     &tx,
+    //     &prevouts,
+    //     &bob_script,
+    //     &bob,
+    //     &tap_info,
+    //     &internal,
+    // );
 
     // broadcast tx
     let tx_id = client.transaction_broadcast(&tx).unwrap();
