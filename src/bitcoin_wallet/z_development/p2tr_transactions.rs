@@ -11,22 +11,17 @@
 
 use std::{collections::BTreeMap, str::FromStr};
 
-use bitcoin::{
-    blockdata::{block, opcodes::all, script::Builder},
-    psbt::{Prevouts, TapTree},
-    schnorr::TapTweak,
-    secp256k1::{All, Message, Secp256k1, SecretKey},
-    util::{
-        sighash::{ScriptPath, SighashCache},
-        taproot::{ControlBlock, LeafVersion, TaprootBuilder, TaprootSpendInfo},
-    },
-    Address, KeyPair, LockTime, Network, OutPoint, PackedLockTime, SchnorrSig, SchnorrSighashType,
-    Script, Sequence, Transaction, TxIn, TxOut, Witness, XOnlyPublicKey,
-};
+use bitcoin::{blockdata::{block, opcodes::all, script::Builder}, psbt::{Prevouts, TapTree}, schnorr::TapTweak, secp256k1::{All, Message, Secp256k1, SecretKey}, util::{
+    sighash::{ScriptPath, SighashCache},
+    taproot::{ControlBlock, LeafVersion, TaprootBuilder, TaprootSpendInfo},
+}, Address, KeyPair, LockTime, Network, OutPoint, PackedLockTime, SchnorrSig, SchnorrSighashType, Script, Sequence, Transaction, TxIn, TxOut, Witness, XOnlyPublicKey, Txid, SigHashType};
+use bitcoin::Denomination::Satoshi;
 use bitcoin_hashes::{hex::FromHex, Hash};
 use electrum_client::{Client, ElectrumApi};
 
 use crate::bitcoin_wallet::z_development::helpers;
+use crate::simple_wallet::p2wpkh_electrum;
+use crate::simple_wallet::p2wpkh_electrum::from_seed;
 
 fn create_prev_outputs(prev_tx: &Vec<TxIn>) -> Vec<TxIn> {
     let mut prev_outputs: Vec<TxIn> = vec![];
@@ -243,4 +238,130 @@ pub fn test_main() {
     // broadcast tx
     let tx_id = client.transaction_broadcast(&tx).unwrap();
     println!("transaction hash: {}", tx_id);
+}
+
+// https://github.com/mruddy/bip65-demos/blob/master/refund.js
+#[test]
+pub fn test_example_alice() {
+    let secp = Secp256k1::new();
+    // predefined data
+    let alice_secret =
+        SecretKey::from_str("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90")
+            .unwrap();
+    let bob_secret =
+        SecretKey::from_str("81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9")
+            .unwrap();
+    let internal_secret =
+        SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
+            .unwrap();
+
+    let alice = KeyPair::from_secret_key(&secp, &alice_secret);
+    let (alice_public_key, _) = alice.x_only_public_key();
+    let bob = KeyPair::from_secret_key(&secp, &bob_secret);
+    let (bob_public_key, _) = bob.x_only_public_key();
+    let internal = KeyPair::from_secret_key(&secp, &internal_secret);
+    let (internal_public_key, _) = internal.x_only_public_key();
+
+    println!("alice public key {}", alice.public_key());
+    println!("bob public key {}", bob.public_key());
+    println!("internal public key {}", internal.public_key());
+
+
+    let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
+    // get the current block height using the client
+    let block_height = helpers::get_current_block_height(&client);
+    let unlock_block = block_height + 1;
+
+    println!("Blocks {} {}", block_height, unlock_block);
+
+    let redeemScript = helpers::create_script_refund(&alice_public_key, unlock_block);
+
+    // Pay from alice to redeem script
+    // Deposit transaction
+
+    println!("redeem script {}", redeemScript);
+    let builder =
+        TaprootBuilder::with_huffman_tree(vec![(1, redeemScript.clone())])
+            .unwrap();
+
+    let (internal_public_key, _) = internal.x_only_public_key();
+
+    let tap_info = builder.finalize(&secp, internal_public_key).unwrap();
+
+    let address = Address::p2tr(
+        &secp,
+        tap_info.internal_key(),
+        tap_info.merkle_root(),
+        Network::Testnet,
+    );
+
+    // When depositing uncomment this
+    // p2wpkh_electrum::p2wpkh_electrum(
+    //     Some("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90"),
+    //     &client,
+    //     200,
+    //     &address.script_pubkey(),
+    // );
+
+    // Redeeming
+    let (vec_tx_in, prev_tx) = helpers::get_prev_txs(&client, &address);
+    let private_key = from_seed(&Some("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90"));
+    let alice_address = Address::p2wpkh(&private_key.public_key(&secp), crate::bitcoin_wallet::constants::NETWORK).unwrap();
+    // // gets the best prev out to spend and saves the index of the tx and of the output
+    let (best_prev_tx_index, best_prev_out_index) =
+        helpers::get_best_prev_to_spend_index(prev_tx.clone(), &address);
+
+    println!("Input {}", vec_tx_in[best_prev_tx_index].previous_output.clone());
+    let mut tx = Transaction {
+        version: 2,
+        lock_time: PackedLockTime(unlock_block as u32),
+        // lock_time: LockTime::from_height((unlock_block + 1) as u32)
+        //     .unwrap()
+        //     .into(),
+        input: vec![TxIn {
+            previous_output: vec_tx_in[best_prev_tx_index].previous_output.clone(),
+            script_sig: Script::new(),
+            sequence: Sequence(0),
+            witness: Witness::default(),
+        }],
+        output: vec![TxOut {
+            value: 200,
+            script_pubkey: alice_address.script_pubkey(), // where funds are going
+        }],
+    };
+
+    // tx.txid();
+    // redeemScript.as_bytes()
+    // tx.input[0].script_sig = Builder::new().push_slice(tx.)
+    // tx.input[0].script_sig = Builder::new()
+    //     .push_slice(&secp.sign_ecdsa(
+    //         SighashCache.signature_hash(
+    //             best_prev_out_index,
+    //             redeemScript,
+    //             200,
+    //             SighashCache::All,
+    //         ),
+    //         &alice_secret,
+    //     ).serialize_der())
+    //     .push_opcode(bitcoin::blockdata::opcodes::OP_FALSE)
+    //     .push_script(redeemScript.clone())
+    //     .into_script();
+
+
+    // attach the signature to script_sig
+    // let script_sig = Builder::new()
+    //     .push_slice(&script_sig_first_part)
+    //     .push_slice(redeems[i].redeem_script.as_bytes())
+    //     .into_script();
+
+    // let mut tx = create_transaction(
+    //     &vec_tx_in,
+    //     &alice_address,
+    //     200,
+    //     best_prev_tx_index,
+    //     unlock_block,
+    // );
+
+    let redeem_hash = client.transaction_broadcast(&tx);
+    println!("Redeem {}", redeem_hash.unwrap());
 }
