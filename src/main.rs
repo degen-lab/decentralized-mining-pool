@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::{env, str::FromStr};
 
 use bitcoin::secp256k1::{rand::rngs::OsRng, SecretKey};
