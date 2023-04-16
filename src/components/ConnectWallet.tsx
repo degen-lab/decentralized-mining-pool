@@ -1,7 +1,7 @@
 import { AppConfig, showConnect, UserSession } from '@stacks/connect';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
-import colors from '../consts/Colors';
+import colors from '../consts/colors';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 

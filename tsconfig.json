@@ -23,5 +23,5 @@
   },
   "include": [
     "src/components", "src/custom.d.ts"
-, "src/index.tsx", "src/consts/DarkModeButton.ts", "src/pages/Cinema.tsx", "src/pages/MiningPool.tsx"  ]
+, "src/index.tsx", "src/consts/darkModeButton.ts", "src/pages/Cinema.tsx", "src/pages/MiningPool.tsx"  ]
 }

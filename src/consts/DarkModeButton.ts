@@ -1,5 +1,5 @@
 import { Switch, styled } from '@mui/material';
-import colors from '../consts/Colors'
+import colors from './colors'
 
 interface DarkModeButtonProps {
   currentTheme: string;

@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { StacksMocknet } from '@stacks/network';
+import { postApiUrl } from '../consts/network';
+import { network } from '../consts/network';
+import { fetchReadOnlyModular, fetchReadOnlyList, fetchReadOnlySimple } from '../consts/readOnly';
 import '../App.css';
+import { contractMapping } from '../consts/contract';
+import { fromResultToList } from '../consts/converter';
 
 import {
   AnchorMode,
@@ -9,7 +14,7 @@ import {
   PostConditionMode,
   callReadOnlyFunction,
   cvToString,
-  hexToCV,
+  listCV,
 } from '@stacks/transactions';
 import { userSession } from '../components/ConnectWallet';
 import useInterval from '@use-it/interval';
@@ -40,52 +45,73 @@ const ContractCallGm = () => {
     });
   }
 
+  const [result, setResult] = useState<any>();
+
   const getWaitingList = useCallback(async () => {
     if (userSession.isUserSignedIn()) {
-      const userAddress = userSession.loadUserData().profile.stxAddress.testnet;
-      const options = {
-        contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        contractName: 'main-contract',
-        functionName: 'get-waiting-list',
-        network: new StacksMocknet(),
-        functionArgs: [],
-        senderAddress: userAddress,
-      };
+      const userAddress =
+        network == 'mainnet'
+          ? userSession.loadUserData().profile.stxAddress.mainnet
+          : userSession.loadUserData().profile.stxAddress.testnet;
+      let newResult = await fetchReadOnlyModular(
+        postApiUrl[network](
+          contractMapping[network].contractAddress,
+          contractMapping[network].contractName,
+          contractMapping[network].getWaitingList
+        ),
+        userAddress,
+        []
+      );
+      let listArg = fromResultToList(newResult);
 
-      const result = await callReadOnlyFunction(options);
-      console.log('Waiting list:');
-      console.log(cvToString(result));
+      let newResult2 = await fetchReadOnlySimple(
+        postApiUrl[network](
+          contractMapping[network].contractAddress,
+          contractMapping[network].contractName,
+          contractMapping[network].getAllDataWaitingMiners
+        ),
+        userAddress,
+        listArg
+      );
+
+      // const newResult = await callReadOnlyFunction(options);
+      setResult(newResult);
     }
-  }, []);
+  }, [result]);
 
-  const getMinersList = useCallback(async () => {
-    if (userSession.isUserSignedIn()) {
-      const userAddress = userSession.loadUserData().profile.stxAddress.testnet;
-      const options = {
-        contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        contractName: 'main-contract',
-        functionName: 'get-miners-list',
-        network: new StacksMocknet(),
-        functionArgs: [],
-        senderAddress: userAddress,
-      };
+  console.log(result);
+  // fromResultToList(result);
 
-      const result = await callReadOnlyFunction(options);
-      console.log('Miners List: ');
-      console.log(cvToString(result));
-    }
-  }, []);
+  // const getAllDataWaitingMiners = useCallback(async () => {
+  //   if (userSession.isUserSignedIn()) {
+  //     const userAddress =
+  //       network == 'mainnet'
+  //         ? userSession.loadUserData().profile.stxAddress.mainnet
+  //         : userSession.loadUserData().profile.stxAddress.testnet;
+  //     let newResult = await fetchReadOnlySimple(
+  //       postApiUrl[network](
+  //         contractMapping[network].contractAddress,
+  //         contractMapping[network].contractName,
+  //         contractMapping[network].getAllDataWaitingMiners
+  //       ),
+  //       userAddress,
+  //       [result]
+  //     );
+  //     console.log('Waiting list:');
+  //     console.log(newResult);
+  //   }
+  // }, []);
 
   useEffect(() => {
     getWaitingList();
   }, [userSession.isUserSignedIn()]);
 
-  useEffect(() => {
-    getMinersList();
-  }, [userSession.isUserSignedIn()]);
+  // useEffect(() => {
+  //   getAllDataWaitingMiners();
+  // }, [userSession.isUserSignedIn()]);
 
   useInterval(getWaitingList, 10000);
-  useInterval(getMinersList, 10000);
+  // useInterval(getAllDataWaitingMiners, 10000);
 
   if (!userSession.isUserSignedIn()) {
     return <h1>Log in</h1>;

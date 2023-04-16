@@ -10,8 +10,8 @@ import Box from '@mui/material/Box';
 import TablePagination from '@mui/material/TablePagination';
 import { TableVirtuoso, TableComponents } from 'react-virtuoso';
 import { TableSortLabel } from '@mui/material';
-import useCurrentTheme from '../consts/CurrentTheme';
-import colors from '../consts/Colors';
+import useCurrentTheme from '../consts/currentTheme';
+import colors from '../consts/colors';
 
 interface Data {
   calories: number;
