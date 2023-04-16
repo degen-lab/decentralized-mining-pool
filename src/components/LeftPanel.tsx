@@ -70,7 +70,7 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
       <List style={{ backgroundColor: colors[currentTheme].accent2 }}>
         <div>
           <ListItem>
-            <ListItemButton component={Link} to={'/'}>
+            <ListItemButton component={Link} to={'/mining-pool'}>
               <ListItemIcon>
                 <Hardware style={{ color: colors[currentTheme].secondary }} />
               </ListItemIcon>
