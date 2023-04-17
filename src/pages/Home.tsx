@@ -52,9 +52,9 @@ const ContractCallGm = () => {
         senderAddress: userAddress,
       };
 
-      const result = await callReadOnlyFunction(options);
+      // const result = await callReadOnlyFunction(options);
       console.log('Waiting list:');
-      console.log(cvToString(result));
+      // console.log(cvToString(result));
     }
   }, []);
 
@@ -70,9 +70,9 @@ const ContractCallGm = () => {
         senderAddress: userAddress,
       };
 
-      const result = await callReadOnlyFunction(options);
+      // const result = await callReadOnlyFunction(options);
       console.log('Miners List: ');
-      console.log(cvToString(result));
+      // console.log(cvToString(result));
     }
   }, []);
 
