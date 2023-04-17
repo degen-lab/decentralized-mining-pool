@@ -2,7 +2,7 @@ import { cvToHex, cvToJSON, hexToCV, tupleCV, uintCV, listCV, principalCV } from
 import { network } from './network';
 import { argType, convertArgsReadOnly } from './converter';
 
-const getRequestOptionsPostRequest = (argsClarity: argType[], userAddress: string) => {
+const getRequestOptionsPostRequest = (argsClarity: any[], userAddress: string) => {
   return {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -14,16 +14,14 @@ const getRequestOptionsPostRequest = (argsClarity: argType[], userAddress: strin
   };
 };
 
-export const fetchReadOnlyModular = async (requestUrl: string, userAddress: string, args: argType[]) => {
-  let convertedArgs = convertArgsReadOnly(args);
-  const requestOptions = getRequestOptionsPostRequest(convertedArgs, userAddress);
-
-  console.log(convertedArgs);
-  console.log(requestOptions);
-
+export const fetchReadOnlyModular = async (requestUrl: string, userAddress: string, args: any[]) => {
+  // let convertedArgs = convertArgsReadOnly(args);
+  const requestOptions = getRequestOptionsPostRequest(args, userAddress);
+  
   let returnedData = await fetch(requestUrl, requestOptions)
     .then((response) => response.json())
     .then((data) => cvToJSON(hexToCV(data.result)));
+    // console.log(returnedData)
   return returnedData;
 };
 
@@ -53,6 +51,7 @@ export const fetchReadOnlySimple = async (requestUrl: string, userAddress: strin
       arguments: [cvToHex(listCV(convertedList))],
     }),
   };
+
   let returnedData = await fetch(requestUrl, requestOptions)
     .then((response) => response.json())
     .then((data) => cvToJSON(hexToCV(data.result)));

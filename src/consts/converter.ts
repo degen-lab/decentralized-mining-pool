@@ -3,6 +3,7 @@ import {
   cvToHex,
   cvToJSON,
   hexToCV,
+  listCV,
   intCV,
   makeContractCall,
   PostConditionMode,
@@ -28,15 +29,15 @@ import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV
 // };
 
 const convertIntToArgReadOnly = (number: number) => {
-  return cvToHex(uintCV(number));
+  return uintCV(number);
 };
 
 const convertStringToArgReadOnly = (str: string) => {
-  return cvToHex(stringCV(str, 'ascii'));
+  return stringCV(str, 'ascii');
 };
 
 const convertPrincipalToArgReadOnly = (principal: string) => {
-  return cvToHex(principalCV(principal));
+  return principalCV(principal);
 };
 
 const isPrincipal = (str: string) => {
@@ -53,15 +54,25 @@ type addressType = string;
 export type argType = number | string | addressType;
 
 export const convertArgsReadOnly = (args: any[]) => {
-  let convertedArgs: argType[] = [];
-  args.forEach((x) => {
-    if (!isNaN(x)) {
-      // number
-      convertedArgs.push(convertIntToArgReadOnly(x));
-    } else if (isPrincipal(x)) {
-      convertedArgs.push(convertPrincipalToArgReadOnly(x));
-    } else convertedArgs.push(convertStringToArgReadOnly(x));
-  });
+    console.log(args)
+    let convertedArgs: any[] = [];
+    if (args.length > 0) {
+        let convertArgsBefore: any;
+        args.forEach((arg) => {
+            console.log(cvToJSON(hexToCV(arg)))
+            convertArgsBefore.push(cvToJSON(hexToCV(arg)))})
+        convertArgsBefore.forEach((x: any) => {
+    
+            console.log(x)
+            if (isPrincipal(x)) {
+                convertedArgs.push(convertPrincipalToArgReadOnly(x));
+            }
+            else if (!isNaN(x)) {
+                // number
+                convertedArgs.push(convertIntToArgReadOnly(x));
+            } 
+            else convertedArgs.push(convertStringToArgReadOnly(x));
+  });}
   return convertedArgs;
 };
 
@@ -86,8 +97,10 @@ export const convertArgsSCCall = (args: any[]) => {
 };
 
 export const fromResultToList = (result: any) => {
-  // console.log(result.value);
   let listArg: any[] = [];
+  let convertedArg: any[] = [];
+  
   result.value.forEach((x:any) => listArg.push(x.value));
-  return listArg;
+  listArg.slice(0, 1).forEach((x:any) => convertedArg.push(principalCV(x)))
+  return cvToHex(listCV(convertedArg));
 };

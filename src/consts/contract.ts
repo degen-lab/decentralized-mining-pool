@@ -12,6 +12,7 @@ type ContractMapping = Record<
     voteNegativeJoin: string;
     getWaitingList: string;
     getMinersList: string;
+    getStatusAddress: string;
   }
 >;
 
@@ -26,6 +27,7 @@ export const contractMapping: ContractMapping = {
     voteNegativeJoin: 'vote-negative-join-request',
     getWaitingList: 'get-waiting-list',
     getMinersList: 'get-miners-list',
+    getStatusAddress: 'get-status-address',
   },
   testnet: {
     contractAddress: '', // TODO: complete when deployed
@@ -37,6 +39,7 @@ export const contractMapping: ContractMapping = {
     voteNegativeJoin: 'vote-negative-join-request',
     getWaitingList: 'get-waiting-list',
     getMinersList: 'get-miners-list',
+    getStatusAddress: 'get-status-address',
   },
   devnet: {
     contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
@@ -48,5 +51,6 @@ export const contractMapping: ContractMapping = {
     voteNegativeJoin: 'vote-negative-join-request',
     getWaitingList: 'get-waiting-list',
     getMinersList: 'get-miners-list',
+    getStatusAddress: 'get-status-address',
   },
 };

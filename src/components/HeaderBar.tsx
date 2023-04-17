@@ -11,7 +11,6 @@ const HeaderBar = () => {
   const changeTheme = () => {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    window.location.reload();
   };
 
   const isButtonChecked = currentTheme === 'light' ? true : false;

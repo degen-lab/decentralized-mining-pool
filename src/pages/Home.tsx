@@ -62,45 +62,43 @@ const ContractCallGm = () => {
         userAddress,
         []
       );
+
+      //implement a while to slice
+      //   export const fetchMainOperationData = async (operation) => {
+      //     /// e.g. operation = fighting-resources
+      //     let operationDictionaryLocal = {};
+      //     let mainOperationsDataLocal = '';
+      //     let startingIndex = 0;
+      //     let total = 6;
+      //     let finalIndex = total;
+      //     let operationList = dataFunctionNames[operation].list;
+
+      //     while (startingIndex < operationList.length) {
+      //       mainOperationsDataLocal = await fetchReadOnlySimple(
+      //         `${readOnlyBase[network]}/${contractAddress[network]}/${contractName.main}/${dataFunctionNames[operation].functionName}`,
+      //         operationList.slice(startingIndex, finalIndex)
+      //       );
+      //       startingIndex += total;
+      //       finalIndex += total;
+
+      // can fetch for only 1 miner
       let listArg = fromResultToList(newResult);
 
-      let newResult2 = await fetchReadOnlySimple(
+      let newResult2 = await fetchReadOnlyModular(
         postApiUrl[network](
           contractMapping[network].contractAddress,
           contractMapping[network].contractName,
           contractMapping[network].getAllDataWaitingMiners
         ),
         userAddress,
-        listArg
+        [listArg]
       );
+      console.log(newResult2);
 
       // const newResult = await callReadOnlyFunction(options);
-      setResult(newResult);
+      setResult(listArg);
     }
   }, [result]);
-
-  console.log(result);
-  // fromResultToList(result);
-
-  // const getAllDataWaitingMiners = useCallback(async () => {
-  //   if (userSession.isUserSignedIn()) {
-  //     const userAddress =
-  //       network == 'mainnet'
-  //         ? userSession.loadUserData().profile.stxAddress.mainnet
-  //         : userSession.loadUserData().profile.stxAddress.testnet;
-  //     let newResult = await fetchReadOnlySimple(
-  //       postApiUrl[network](
-  //         contractMapping[network].contractAddress,
-  //         contractMapping[network].contractName,
-  //         contractMapping[network].getAllDataWaitingMiners
-  //       ),
-  //       userAddress,
-  //       [result]
-  //     );
-  //     console.log('Waiting list:');
-  //     console.log(newResult);
-  //   }
-  // }, []);
 
   useEffect(() => {
     getWaitingList();
