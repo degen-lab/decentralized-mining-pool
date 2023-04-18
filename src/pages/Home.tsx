@@ -3,14 +3,7 @@ import { useConnect } from '@stacks/connect-react';
 import { StacksMocknet } from '@stacks/network';
 import '../App.css';
 
-import {
-  AnchorMode,
-  standardPrincipalCV,
-  PostConditionMode,
-  callReadOnlyFunction,
-  cvToString,
-  hexToCV,
-} from '@stacks/transactions';
+import { AnchorMode, standardPrincipalCV, PostConditionMode } from '@stacks/transactions';
 import { userSession } from '../components/ConnectWallet';
 import useInterval from '@use-it/interval';
 
@@ -52,9 +45,7 @@ const ContractCallGm = () => {
         senderAddress: userAddress,
       };
 
-      // const result = await callReadOnlyFunction(options);
       console.log('Waiting list:');
-      // console.log(cvToString(result));
     }
   }, []);
 
@@ -69,10 +60,7 @@ const ContractCallGm = () => {
         functionArgs: [],
         senderAddress: userAddress,
       };
-
-      // const result = await callReadOnlyFunction(options);
       console.log('Miners List: ');
-      // console.log(cvToString(result));
     }
   }, []);
 
