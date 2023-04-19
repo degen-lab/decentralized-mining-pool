@@ -4,12 +4,16 @@ import { StacksMocknet } from '@stacks/network';
 import '../App.css';
 
 import { AnchorMode, standardPrincipalCV, PostConditionMode } from '@stacks/transactions';
-import { userSession } from '../components/ConnectWallet';
+// import { userSession } from '../components/ConnectWallet';
 import useInterval from '@use-it/interval';
+import { useAppSelector } from '../redux/store';
+import { selectUsereSessionState } from '../redux/reducers/user-state';
 
 const ContractCallGm = () => {
   const { doContractCall } = useConnect();
   const [hasPosted, setHasPosted] = useState(false);
+
+  const userSession = useAppSelector(selectUsereSessionState);
 
   function handleGm() {
     const userAddress = userSession.loadUserData().profile.stxAddress.testnet;

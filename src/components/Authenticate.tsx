@@ -2,9 +2,11 @@ import MainPage from './MainPage';
 
 import { Connect } from '@stacks/connect-react';
 import { useAppSelector } from '../redux/store';
+import { selectUsereSessionState } from '../redux/reducers/user-state';
 
 const Authenticate = () => {
-  const userSession = useAppSelector((state) => state.userState.userSession);
+  const userSession = useAppSelector(selectUsereSessionState);
+
   return (
     <Connect
       authOptions={{
