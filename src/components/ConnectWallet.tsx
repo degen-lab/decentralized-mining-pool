@@ -1,14 +1,12 @@
-import { AppConfig, UserSession } from '@stacks/connect';
+import { AppConfig } from '@stacks/connect';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import colors from '../consts/Colors';
 import { useAppDispatch, useAppSelector } from '../redux/store';
-import { connectAction, disconnectAction } from '../redux/actions';
-import { selectUsereSessionState } from '../redux/reducers/user-state';
+import { connectAction, disconnectAction, getUserRoleAction } from '../redux/actions';
+import { selectCurrentUserRole, selectUsereSessionState } from '../redux/reducers/user-state';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
-
-// export const userSession = new UserSession({ appConfig });
 
 interface ConnectWalletProps {
   currentTheme: string;
@@ -18,15 +16,21 @@ const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
   const userSession = useAppSelector(selectUsereSessionState);
   const dispatch = useAppDispatch();
 
+  const currentRole = useAppSelector(selectCurrentUserRole);
+
   const disconnect = () => {
     dispatch(disconnectAction());
   };
 
-  const authenticate = () => {
+  const authenticate = async () => {
     dispatch(connectAction());
   };
 
   if (userSession.isUserSignedIn()) {
+    if (currentRole === 'Viewer') {
+      dispatch(getUserRoleAction());
+      return <div>Loading role...</div>;
+    }
     return (
       <div>
         <button className="Connect" style={{ backgroundColor: colors[currentTheme].primary }} onClick={disconnect}>
