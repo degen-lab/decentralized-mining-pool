@@ -10,7 +10,7 @@ export const userSession = new UserSession({ appConfig });
 const authenticate = () => {
   showConnect({
     appDetails: {
-      name: 'Stacks React Starter',
+      name: 'React App',
       icon: window.location.origin + '/logo512.png',
     },
     redirectTo: '/',

@@ -100,7 +100,8 @@ export const fromResultToList = (result: any) => {
   let listArg: any[] = [];
   let convertedArg: any[] = [];
   
-  result.value.forEach((x:any) => listArg.push(x.value));
-  listArg.slice(0, 1).forEach((x:any) => convertedArg.push(principalCV(x)))
-  return cvToHex(listCV(convertedArg));
+  result.list.forEach((x:any) => listArg.push(x));
+  listArg.slice(0, 1).forEach((x:any) => convertedArg.push(x))
+  
+  return listCV(convertedArg);
 };
