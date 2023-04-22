@@ -135,7 +135,7 @@
             (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u2) 
             u2 
             (+ (- (unwrap-panic (get-n-at-block-asked-to-join miner)) (unwrap-panic (get-k-at-block-asked-to-join miner))) u1))),
-      was-blacklist: (unwrap-panic (get value (map-get? map-blacklist {address: miner})))
+      was-blacklist: (if (is-some (get value (map-get? map-blacklist {address: miner}))) (unwrap-panic (get value (map-get? map-blacklist {address: miner}))) false)
     })))
 
 ;; proposed for removal miners
@@ -171,7 +171,10 @@
           u1 
           (if (is-eq (unwrap-panic (get-n-at-block-proposed-removal miner)) u3) 
             u2 
-            (+ (- (unwrap-panic (get-n-at-block-proposed-removal miner)) (unwrap-panic (get-k-at-block-proposed-removal miner))) u1)))
+            (+ 
+              (- 
+                (unwrap-panic (get-n-at-block-proposed-removal miner)) 
+                (unwrap-panic (get-k-at-block-proposed-removal miner))) u1)))
     })))
 
 ;; pending accept miners
