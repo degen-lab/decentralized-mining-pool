@@ -16,12 +16,11 @@ import { GetWaitingMinersDetails } from './Home';
 import { useCallback, useEffect, useState } from 'react';
 
 interface Data {
-  calories: number;
-  carbs: number;
-  dessert: string;
-  fat: number;
   id: number;
-  protein: number;
+  address: string;
+  negativeVotes: string;
+  positiveVotes: string;
+  wasBlacklisted: string;
 }
 
 interface ColumnData {
@@ -31,63 +30,40 @@ interface ColumnData {
   width: number;
 }
 
-type Sample = [string, number, number, number, number];
-
-const sample: readonly Sample[] = [
-  ['Frozen yoghurt', 159, 6.0, 24, 4.0],
-  ['Ice cream sandwich', 237, 9.0, 37, 4.3],
-  ['Eclair', 262, 16.0, 24, 6.0],
-  ['Cupcake', 305, 3.7, 67, 4.3],
-  ['Gingerbread', 356, 16.0, 49, 3.9],
-];
-
 const createData = (
   id: number,
-  dessert: string,
-  calories: number,
-  fat: number,
-  carbs: number,
-  protein: number
-): Data => {
-  return { id, dessert, calories, fat, carbs, protein };
+  address: string,
+  negativeVotes: string,
+  positiveVotes: string,
+  wasBlacklisted: string
+) => {
+  return { id, address, negativeVotes, positiveVotes, wasBlacklisted };
 };
 
 const columns: ColumnData[] = [
   {
-    width: 250,
-    label: 'Dessert',
-    dataKey: 'dessert',
+    width: 400,
+    label: 'Address',
+    dataKey: 'address',
   },
   {
     width: 130,
-    label: 'Calories (g)',
-    dataKey: 'calories',
+    label: 'Negative Votes',
+    dataKey: 'negativeVotes',
     numeric: true,
   },
   {
     width: 130,
-    label: 'Fat (g)',
-    dataKey: 'fat',
+    label: 'Positive Votes',
+    dataKey: 'positiveVotes',
     numeric: true,
   },
   {
     width: 130,
-    label: 'Carbs (g)',
-    dataKey: 'carbs',
-    numeric: true,
-  },
-  {
-    width: 130,
-    label: 'Protein (g)',
-    dataKey: 'protein',
-    numeric: true,
+    label: 'Blacklisted',
+    dataKey: 'wasBlacklisted',
   },
 ];
-
-const rows: Data[] = Array.from({ length: 123 }, (_, index) => {
-  const randomSelection = sample[Math.floor(Math.random() * sample.length)];
-  return createData(index, ...randomSelection);
-});
 
 const VirtuosoTableComponents: TableComponents<Data> = {
   Scroller: React.forwardRef<HTMLDivElement>((props, ref) => <TableContainer component={Paper} {...props} ref={ref} />),
@@ -103,6 +79,18 @@ const MiningPool = () => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [orderBy, setOrderBy] = React.useState<keyof Data>();
+
+  const rows = minersList.map((miner: any, index: number) => {
+    const minerValue = miner.value[0].value.value;
+    return createData(
+      index,
+      minerValue.miner.value,
+      minerValue['negative-votes'].value + '/' + minerValue['negative-threshold'].value,
+      minerValue['positive-votes'].value + '/' + minerValue['positive-threshold'].value,
+      !minerValue['was-blacklist'].value ? 'No' : 'Yes'
+    );
+  });
+
   const totalRows = rows.length;
 
   useEffect(() => {
@@ -112,15 +100,6 @@ const MiningPool = () => {
     };
     fetchData();
   }, [setMinersList]);
-
-  if (minersList.length) {
-    console.log(minersList[0].value[0].value.value.miner.value);
-    console.log(minersList[0].value[0].value.value['negative-threshold'].value);
-    console.log(minersList[0].value[0].value.value['negative-votes'].value);
-    console.log(minersList[0].value[0].value.value['positive-threshold'].value);
-    console.log(minersList[0].value[0].value.value['positive-votes'].value);
-    console.log(minersList[0].value[0].value.value['was-blacklist'].value);
-  }
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
