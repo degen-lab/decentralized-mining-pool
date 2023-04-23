@@ -12,6 +12,8 @@ import { TableVirtuoso, TableComponents } from 'react-virtuoso';
 import { TableSortLabel } from '@mui/material';
 import useCurrentTheme from '../consts/currentTheme';
 import colors from '../consts/colors';
+import { GetWaitingMinersDetails } from './Home';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Data {
   calories: number;
@@ -96,11 +98,29 @@ const VirtuosoTableComponents: TableComponents<Data> = {
 };
 
 const MiningPool = () => {
+  const [minersList, setMinersList] = useState<any>([]);
   const { currentTheme } = useCurrentTheme();
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [orderBy, setOrderBy] = React.useState<keyof Data>();
   const totalRows = rows.length;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const newMinersList = await GetWaitingMinersDetails();
+      setMinersList(newMinersList);
+    };
+    fetchData();
+  }, [setMinersList]);
+
+  if (minersList.length) {
+    console.log(minersList[0].value[0].value.value.miner.value);
+    console.log(minersList[0].value[0].value.value['negative-threshold'].value);
+    console.log(minersList[0].value[0].value.value['negative-votes'].value);
+    console.log(minersList[0].value[0].value.value['positive-threshold'].value);
+    console.log(minersList[0].value[0].value.value['positive-votes'].value);
+    console.log(minersList[0].value[0].value.value['was-blacklist'].value);
+  }
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);

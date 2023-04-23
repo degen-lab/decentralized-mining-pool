@@ -96,12 +96,12 @@ export const convertArgsSCCall = (args: any[]) => {
   return convArgs;
 };
 
-export const fromResultToList = (result: any) => {
+export const fromResultToList = (result: any, start: number, end: number) => {
   let listArg: any[] = [];
   let convertedArg: any[] = [];
   
   result.list.forEach((x:any) => listArg.push(x));
-  listArg.slice(0, 1).forEach((x:any) => convertedArg.push(x))
+  listArg.slice(start, end).forEach((x:any) => convertedArg.push(x))
   
   return listCV(convertedArg);
 };

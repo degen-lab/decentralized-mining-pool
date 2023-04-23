@@ -16,6 +16,9 @@ import {
   cvToString,
   listCV,
   hexToCV,
+  ListCV,
+  ClarityValue,
+  cvToJSON,
 } from '@stacks/transactions';
 import { userSession } from '../components/ConnectWallet';
 import useInterval from '@use-it/interval';
@@ -46,103 +49,6 @@ const ContractCallGm = () => {
     });
   }
 
-  const [result, setResult] = useState<any>();
-  const [result2, setResult2] = useState<any>();
-
-  // const getWaitingList = useCallback(async () => {
-  //   if (userSession.isUserSignedIn()) {
-  //     const userAddress =
-  //       network == 'mainnet'
-  //         ? userSession.loadUserData().profile.stxAddress.mainnet
-  //         : userSession.loadUserData().profile.stxAddress.testnet;
-  //     let newResult = await fetchReadOnlyModular(
-  //       postApiUrl[network](
-  //         contractMapping[network].contractAddress,
-  //         contractMapping[network].contractName,
-  //         contractMapping[network].getWaitingList
-  //       ),
-  //       userAddress,
-  //       []
-  //     );
-
-  //implement a while to slice
-  //   export const fetchMainOperationData = async (operation) => {
-  //     /// e.g. operation = fighting-resources
-  //     let operationDictionaryLocal = {};
-  //     let mainOperationsDataLocal = '';
-  //     let startingIndex = 0;
-  //     let total = 6;
-  //     let finalIndex = total;
-  //     let operationList = dataFunctionNames[operation].list;
-
-  //     while (startingIndex < operationList.length) {
-  //       mainOperationsDataLocal = await fetchReadOnlySimple(
-  //         `${readOnlyBase[network]}/${contractAddress[network]}/${contractName.main}/${dataFunctionNames[operation].functionName}`,
-  //         operationList.slice(startingIndex, finalIndex)
-  //       );
-  //       startingIndex += total;
-  //       finalIndex += total;
-
-  // can fetch for only 1 miner
-  // let listArg = fromResultToList(newResult);
-
-  // let newResult2 = await fetchReadOnlyModular(
-  //   postApiUrl[network](
-  //     contractMapping[network].contractAddress,
-  //     contractMapping[network].contractName,
-  //     contractMapping[network].getAllDataWaitingMiners
-  //   ),
-  //   userAddress,
-  //   [listArg]
-  // );
-  // console.log(newResult2);
-
-  // const newResult = await callReadOnlyFunction(options);
-  //     setResult(listArg);
-  //   }
-  // }, [result]);
-
-  const getWaitingMiners = useCallback(async () => {
-    if (userSession.isUserSignedIn()) {
-      const userAddress =
-        network == 'mainnet'
-          ? userSession.loadUserData().profile.stxAddress.mainnet
-          : userSession.loadUserData().profile.stxAddress.testnet;
-      const waitingList = {
-        contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        contractName: 'main-contract',
-        functionName: 'get-waiting-list',
-        network: new StacksMocknet(),
-        functionArgs: [],
-        senderAddress: userAddress,
-      };
-
-      const newWaitingList = fromResultToList(await callReadOnlyFunction(waitingList));
-
-      const waitingListDetailed = {
-        contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-        contractName: 'main-contract',
-        functionName: 'get-all-data-waiting-miners',
-        network: new StacksMocknet(),
-        functionArgs: [newWaitingList],
-        senderAddress: userAddress,
-      };
-
-      const newResult = await callReadOnlyFunction(waitingListDetailed);
-
-      console.log(newResult);
-      if (newResult) {
-        setResult2(newResult);
-      }
-    }
-  }, [result2]);
-
-  useEffect(() => {
-    getWaitingMiners();
-  }, [userSession.isUserSignedIn()]);
-
-  useInterval(getWaitingMiners, 10000);
-
   if (!userSession.isUserSignedIn()) {
     return <h1>Log in</h1>;
   }
@@ -164,6 +70,51 @@ const ContractCallGm = () => {
       )}
     </div>
   );
+};
+
+export const GetWaitingMinersDetails = async () => {
+  const newResultList: ClarityValue[] = [];
+
+  if (userSession.isUserSignedIn()) {
+    const userAddress =
+      network == 'mainnet'
+        ? userSession.loadUserData().profile.stxAddress.mainnet
+        : userSession.loadUserData().profile.stxAddress.testnet;
+    const waitingList = {
+      contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      contractName: 'main-contract',
+      functionName: 'get-waiting-list',
+      network: new StacksMocknet(),
+      functionArgs: [],
+      senderAddress: userAddress,
+    };
+
+    const fullWaitingList: ClarityValue = await callReadOnlyFunction(waitingList);
+    const step = 1;
+
+    for (
+      let currentIndex = 0;
+      currentIndex < (fullWaitingList as ListCV).list.length;
+      currentIndex = currentIndex + step
+    ) {
+      const newWaitingList = fromResultToList(fullWaitingList, currentIndex, currentIndex + step);
+      const waitingListDetailed = {
+        contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+        contractName: 'main-contract',
+        functionName: 'get-all-data-waiting-miners',
+        network: new StacksMocknet(),
+        functionArgs: [newWaitingList],
+        senderAddress: userAddress,
+      };
+
+      const newResult = await callReadOnlyFunction(waitingListDetailed);
+
+      if (newResult) {
+        newResultList.push(cvToJSON(newResult));
+      }
+    }
+    return newResultList;
+  }
 };
 
 export default ContractCallGm;
