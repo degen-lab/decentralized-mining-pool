@@ -6,39 +6,33 @@ import { useAppDispatch, useAppSelector } from '../redux/store';
 import { connectAction, disconnectAction, getUserRoleAction } from '../redux/actions';
 import { selectCurrentUserRole, selectUsereSessionState } from '../redux/reducers/user-state';
 import { useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { useSelect } from '@mui/base';
+import { useEffect } from 'react';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
-
-type UserAloowedRoutes = 'normalUser' | 'pendingMiner' | 'miner' | 'viewer' | '/';
 
 interface ConnectWalletProps {
   currentTheme: string;
 }
 
 const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
-  const [currentPathName, setCurrentPathName] = useState<string | UserAloowedRoutes>('');
   const userSession = useAppSelector(selectUsereSessionState);
   const dispatch = useAppDispatch();
 
   const currentRole = useAppSelector(selectCurrentUserRole);
   const location = useLocation();
-  console.log(location);
-  console.log('___', location.pathname.substring(1));
+
   const controlAccessRoutes = () => {
-    setCurrentPathName(location.pathname);
-    if (currentPathName !== '/') {
-      if (currentPathName.substring(1).toLowerCase() !== currentRole.toLowerCase()) {
-        return alert('Seems like you got lost, click here to go back to the main page');
+    if (location.pathname !== '/') {
+      if (location.pathname.substring(1).toLowerCase() !== currentRole.toLowerCase()) {
         console.log('Seems like you got lost, click here to go back to the main page');
+        return alert('Seems like you got lost, click here to go back to the main page');
       }
     }
   };
 
   useEffect(() => {
     controlAccessRoutes();
-  }, [location.pathname]);
+  }, [location]);
 
   const disconnect = () => {
     dispatch(disconnectAction());

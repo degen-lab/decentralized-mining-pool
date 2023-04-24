@@ -13,6 +13,7 @@ export const disconnectAction = () => {
 export const connectAction = () => {
   return { type: CONNECT_USER_SESSION };
 };
+
 export const updateUserRoleAction = (newRole: string) => {
   return { type: UPDATE_USER_ROLE, payload: newRole };
 };
