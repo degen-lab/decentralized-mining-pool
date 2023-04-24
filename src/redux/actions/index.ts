@@ -18,6 +18,10 @@ export const updateUserRoleAction = (newRole: string) => {
   return { type: UPDATE_USER_ROLE, payload: newRole };
 };
 
+const updateRole = (): Promise<UserRole> => {
+  return Promise.resolve('Miner');
+};
+
 export const getUserRoleAction = () => {
   return async (dispatch: AppDispatch, getState: () => IinitialState) => {
     try {
@@ -27,8 +31,4 @@ export const getUserRoleAction = () => {
       console.error('Failed to grab user role');
     }
   };
-};
-
-const updateRole = (): Promise<UserRole> => {
-  return Promise.resolve('Miner');
 };
