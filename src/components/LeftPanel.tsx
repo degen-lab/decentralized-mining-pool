@@ -10,11 +10,13 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/icons-material/MenuRounded';
 import MenuOpen from '@mui/icons-material/MenuOpenRounded';
+import HomeIcon from '@mui/icons-material/Home';
 import Hardware from '@mui/icons-material/Hardware';
 import Poll from '@mui/icons-material/Poll';
 import Movie from '@mui/icons-material/Movie';
 import { Link } from 'react-router-dom';
 import colors from '../consts/colors';
+import { MenuItem } from '@mui/material';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
@@ -68,6 +70,19 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
       </List>
       <Divider style={{ backgroundColor: colors[currentTheme].accent2 }} />
       <List style={{ backgroundColor: colors[currentTheme].accent2 }}>
+        <div style={{ marginTop: -10 }}>
+          <ListItem>
+            <ListItemButton component={Link} to={'/'}>
+              <ListItemIcon>
+                <HomeIcon style={{ color: colors[currentTheme].secondary }} />
+              </ListItemIcon>
+              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Home" />
+            </ListItemButton>
+          </ListItem>
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+        </div>
         <div>
           <ListItem>
             <ListItemButton component={Link} to={'/mining-pool'}>

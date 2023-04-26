@@ -43,7 +43,7 @@ export const contractMapping: ContractMapping = {
   },
   devnet: {
     contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-    contractName: 'main-contract',
+    contractName: 'main-contract-5-blocks',
     owner: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
     askToJoin: 'ask-to-join',
     getAllDataWaitingMiners: 'get-all-data-waiting-miners',

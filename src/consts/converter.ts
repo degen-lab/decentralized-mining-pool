@@ -1,6 +1,7 @@
 import {
   broadcastTransaction,
   cvToHex,
+  cvToValue,
   cvToJSON,
   hexToCV,
   listCV,
@@ -10,6 +11,7 @@ import {
   standardPrincipalCV,
   stringAsciiCV,
   uintCV,
+  ClarityValue,
 } from '@stacks/transactions';
 import { network } from './network';
 
@@ -28,19 +30,23 @@ import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV
 //   return mapConverted;
 // };
 
-const convertIntToArgReadOnly = (number: number) => {
+export const convertIntToArg = (number: number) => {
   return uintCV(number);
 };
 
-const convertStringToArgReadOnly = (str: string) => {
+export const convertCVToValue = (value: ClarityValue) => {
+  return cvToValue(value);
+};
+
+export const convertStringToArg = (str: string) => {
   return stringCV(str, 'ascii');
 };
 
-const convertPrincipalToArgReadOnly = (principal: string) => {
+export const convertPrincipalToArg = (principal: string) => {
   return principalCV(principal);
 };
 
-const isPrincipal = (str: string) => {
+export const isPrincipal = (str: string) => {
   let secondChar = 'P';
   str = str.toString();
   if (network !== 'mainnet') secondChar = 'T';
@@ -48,52 +54,6 @@ const isPrincipal = (str: string) => {
     return true;
   }
   return false;
-};
-
-type addressType = string;
-export type argType = number | string | addressType;
-
-export const convertArgsReadOnly = (args: any[]) => {
-    console.log(args)
-    let convertedArgs: any[] = [];
-    if (args.length > 0) {
-        let convertArgsBefore: any;
-        args.forEach((arg) => {
-            console.log(cvToJSON(hexToCV(arg)))
-            convertArgsBefore.push(cvToJSON(hexToCV(arg)))})
-        convertArgsBefore.forEach((x: any) => {
-    
-            console.log(x)
-            if (isPrincipal(x)) {
-                convertedArgs.push(convertPrincipalToArgReadOnly(x));
-            }
-            else if (!isNaN(x)) {
-                // number
-                convertedArgs.push(convertIntToArgReadOnly(x));
-            } 
-            else convertedArgs.push(convertStringToArgReadOnly(x));
-  });}
-  return convertedArgs;
-};
-
-// type argSCCallType = UIntCV | StandardPrincipalCV | StringAsciiCV;
-
-export const convertArgsSCCall = (args: any[]) => {
-  let convArgs: any[] = [];
-  args.forEach((arg) => {
-    if (!isNaN(arg)) {
-      // number
-      convArgs.push(uintCV(arg));
-      // console.log('is number: ' + arg);
-    } else if (isPrincipal(arg)) {
-      // console.log('is principal ' + arg);
-      convArgs.push(standardPrincipalCV(arg));
-    } else {
-      // console.log('is string ' + arg);
-      convArgs.push(stringAsciiCV(arg));
-    }
-  });
-  return convArgs;
 };
 
 export const fromResultToList = (result: any, start: number, end: number) => {
