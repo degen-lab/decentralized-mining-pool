@@ -15,7 +15,7 @@ export const defaultUserState: IUserState = {
   userRole: 'Viewer',
 };
 
-export type UserRole = 'Miner' | 'NormalUser' | 'PendingMiner' | 'Viewer';
+export type UserRole = 'Miner' | 'NormalUser' | 'PendingMiner' | 'WaitingMiner' | 'Viewer';
 
 export const selectUserState = (state: IinitialState) => state.userState;
 export const selectUsereSessionState = (state: IinitialState) => state.userState.userSession;

@@ -12,9 +12,15 @@ import Menu from '@mui/icons-material/MenuRounded';
 import MenuOpen from '@mui/icons-material/MenuOpenRounded';
 import Hardware from '@mui/icons-material/Hardware';
 import Poll from '@mui/icons-material/Poll';
-import Movie from '@mui/icons-material/Movie';
 import { Link } from 'react-router-dom';
 import colors from '../consts/Colors';
+import Home from '@mui/icons-material/Home';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { useAppSelector } from '../redux/store';
+import { selectCurrentUserRole, UserRole } from '../redux/reducers/user-state';
+import { useState } from 'react';
+import { ExpandLess, ExpandMore, StarBorder } from '@mui/icons-material';
+import { Collapse } from '@mui/material';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
@@ -29,6 +35,19 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
     bottom: false,
     right: false,
   });
+
+  const [openMiningPoolMenu, setOpenMiningPoolMenu] = useState<boolean>(true);
+  const [openVotingMenu, setOpenVotingMenu] = useState<boolean>(true);
+
+  const handleClickMiningPoolMenuItem = () => {
+    setOpenMiningPoolMenu(!openMiningPoolMenu);
+  };
+
+  const handleClickVotingMenuItem = () => {
+    setOpenVotingMenu(!openVotingMenu);
+  };
+
+  const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
 
   const toggleDrawer = (anchor: Anchor, open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -67,39 +86,107 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
         </ListItem>
       </List>
       <Divider style={{ backgroundColor: colors[currentTheme].accent2 }} />
-      <List style={{ backgroundColor: colors[currentTheme].accent2 }}>
+      <List
+        style={{ backgroundColor: colors[currentTheme].accent2 }}
+        component="nav"
+        aria-labelledby="nested-list-subheader"
+      >
         <div>
           <ListItem>
-            <ListItemButton component={Link} to={'/mining-pool'}>
+            <ListItemButton component={Link} to={'/dashboard'}>
               <ListItemIcon>
-                <Hardware style={{ color: colors[currentTheme].secondary }} />
+                <Home style={{ color: colors[currentTheme].secondary }} />
               </ListItemIcon>
-              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Mining Pool" />
-            </ListItemButton>
-          </ListItem>
-          <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
-        </div>
-        <div>
-          <ListItem>
-            <ListItemButton component={Link} to={'/voting'}>
-              <ListItemIcon>
-                <Poll style={{ color: colors[currentTheme].secondary }} />
-              </ListItemIcon>
-              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Voting" />
-            </ListItemButton>
-          </ListItem>
-          <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
-        </div>
-        <div>
-          <ListItem>
-            <ListItemButton component={Link} to={'/cinema'}>
-              <ListItemIcon>
-                <Movie style={{ color: colors[currentTheme].secondary }} />
-              </ListItemIcon>
-              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Cinema" />
+              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Dashboard" />
             </ListItemButton>
           </ListItem>
         </div>
+        {currentRole !== 'Viewer' && (
+          <div>
+            <ListItem>
+              <ListItemButton component={Link} to={'/myProfile'}>
+                <ListItemIcon>
+                  <AccountCircleIcon style={{ color: colors[currentTheme].secondary }} />
+                </ListItemIcon>
+                <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Profile" />
+              </ListItemButton>
+            </ListItem>
+          </div>
+        )}
+        {currentRole === 'Miner' && (
+          <>
+            <div>
+              <ListItem className="liMenuMiningPool">
+                <ListItemButton component={Link} to={'/miningPool'} onClick={handleClickMiningPoolMenuItem}>
+                  <ListItemIcon>
+                    <Hardware style={{ color: colors[currentTheme].secondary }} />
+                  </ListItemIcon>
+                  <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Mining Pool" />
+                  {openMiningPoolMenu ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+
+                <Collapse in={openMiningPoolMenu} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} component={Link} to={'/miningPool/status'}>
+                      <ListItemIcon>
+                        <StarBorder />
+                      </ListItemIcon>
+                      <ListItemText primary="Status" />
+                    </ListItemButton>
+                  </List>
+                  <List component="div" disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} component={Link} to={'/miningPool/miners'}>
+                      <ListItemIcon>
+                        <StarBorder />
+                      </ListItemIcon>
+                      <ListItemText primary="Miners" />
+                    </ListItemButton>
+                  </List>
+                </Collapse>
+              </ListItem>
+              <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+            </div>
+            <div>
+              <ListItem className="liMenuMiningPool">
+                <ListItemButton component={Link} to={'/voting'} onClick={handleClickVotingMenuItem}>
+                  <ListItemIcon>
+                    <Poll style={{ color: colors[currentTheme].secondary }} />
+                  </ListItemIcon>
+                  <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Voting" />
+                  {openVotingMenu ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+
+                <Collapse in={openVotingMenu} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/joiners'}>
+                      <ListItemIcon>
+                        <StarBorder />
+                      </ListItemIcon>
+                      <ListItemText primary="Joiners" />
+                    </ListItemButton>
+                  </List>
+                  <List component="div" disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/removals'}>
+                      <ListItemIcon>
+                        <StarBorder />
+                      </ListItemIcon>
+                      <ListItemText primary="Removals" />
+                    </ListItemButton>
+                  </List>
+                  <List component="div" disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/notifier'}>
+                      <ListItemIcon>
+                        <StarBorder />
+                      </ListItemIcon>
+                      <ListItemText primary="Notifier" />
+                    </ListItemButton>
+                  </List>
+                </Collapse>
+              </ListItem>
+              <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+            </div>
+          </>
+        )}
       </List>
     </Box>
   );

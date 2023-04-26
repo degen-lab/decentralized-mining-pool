@@ -3,7 +3,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import colors from '../consts/Colors';
 import { useAppDispatch, useAppSelector } from '../redux/store';
-import { connectAction, disconnectAction, getUserRoleAction } from '../redux/actions';
+import { connectAction, disconnectAction, updateUserRoleAction } from '../redux/actions';
 import { selectCurrentUserRole, selectUsereSessionState } from '../redux/reducers/user-state';
 import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -25,7 +25,6 @@ const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
     if (location.pathname !== '/') {
       if (location.pathname.substring(1).toLowerCase() !== currentRole.toLowerCase()) {
         console.log('Seems like you got lost, click here to go back to the main page');
-        return alert('Seems like you got lost, click here to go back to the main page');
       }
     }
   };
@@ -44,7 +43,7 @@ const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
 
   if (userSession.isUserSignedIn()) {
     if (currentRole === 'Viewer') {
-      dispatch(getUserRoleAction());
+      dispatch(updateUserRoleAction());
       return <div>Loading role...</div>;
     }
     return (

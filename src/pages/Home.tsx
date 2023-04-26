@@ -2,9 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { StacksMocknet } from '@stacks/network';
 import '../App.css';
-
 import { AnchorMode, standardPrincipalCV, PostConditionMode } from '@stacks/transactions';
-// import { userSession } from '../components/ConnectWallet';
 import useInterval from '@use-it/interval';
 import { useAppSelector } from '../redux/store';
 import { selectUsereSessionState } from '../redux/reducers/user-state';

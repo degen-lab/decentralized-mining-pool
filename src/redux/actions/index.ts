@@ -14,19 +14,20 @@ export const connectAction = () => {
   return { type: CONNECT_USER_SESSION };
 };
 
-export const updateUserRoleAction = (newRole: string) => {
-  return { type: UPDATE_USER_ROLE, payload: newRole };
-};
+// export const updateUserRoleAction = (newRole: string) => {
+//   return { type: UPDATE_USER_ROLE, payload: newRole };
+// };
 
 const updateRole = (): Promise<UserRole> => {
-  return Promise.resolve('Miner');
+  return Promise.resolve('NormalUser');
 };
 
-export const getUserRoleAction = () => {
+export const updateUserRoleAction = () => {
   return async (dispatch: AppDispatch, getState: () => IinitialState) => {
     try {
       const userRole = await updateRole();
-      dispatch(updateUserRoleAction(userRole));
+      // dispatch(updateUserRoleAction(userRole));
+      dispatch({ type: UPDATE_USER_ROLE, payload: userRole });
     } catch (err) {
       console.error('Failed to grab user role');
     }

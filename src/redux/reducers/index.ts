@@ -33,7 +33,7 @@ const mainReducer = (state = initialState, action: IreduxAction) => {
       });
       return state;
     case DISCONNECT_USER_SESSION:
-      state.userState.userSession.signUserOut('/');
+      state.userState.userSession.signUserOut('/dashboard');
       console.log('Disconnect');
       return state;
     case UPDATE_USER_ROLE:
