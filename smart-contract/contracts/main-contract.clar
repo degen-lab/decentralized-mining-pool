@@ -75,6 +75,7 @@
 (define-data-var waiting-list (list 300 principal) (list ))
 (define-data-var miners-list (list 300 principal) (list (var-get notifier)))
 (define-data-var pending-accept-list (list 300 principal) (list ))
+(define-data-var proposed-removal-list (list 300 principal) (list ))
 (define-data-var n uint u1)
 (define-data-var k-percentage uint u67)
 (define-data-var k uint u0)
@@ -82,6 +83,7 @@
 (define-data-var waiting-list-miner-to-remove principal tx-sender) ;; use in remove-principal-miners-list
 (define-data-var pending-accept-list-miner-to-remove principal tx-sender)
 (define-data-var miners-list-miner-to-remove principal tx-sender)
+(define-data-var proposed-removal-list-miner-to-remove principal tx-sender)
 (define-data-var last-join-done uint u1)
 (define-data-var miner-to-remove-votes-join principal tx-sender)
 (define-data-var miner-to-remove-votes-remove principal tx-sender)
@@ -464,6 +466,7 @@
   (asserts! (not (check-is-proposed-for-removal-now miner-to-remove)) err-already-proposed-for-removal) 
   (map-set map-block-proposed-to-remove {address: miner-to-remove} {value: block-height})
   (map-set map-is-proposed-for-removal {address: miner-to-remove} {value: true})
+  (var-set proposed-removal-list (unwrap! (as-max-len? (concat (var-get proposed-removal-list) (list miner-to-remove )) u300) err-list-length-exceeded))
   (ok true)))
 
 (define-public (vote-positive-remove-request (miner-to-vote principal))
@@ -513,6 +516,7 @@
     (var-set n (- (var-get n) u1))
     (map-delete map-is-miner {address: miner})
     (map-set map-blacklist {address: miner} {value: true})
+    (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
     (clear-votes-map-remove-vote miner)
     (if (>= new-k-percentage (var-get k-critical)) 
       (update-threshold)
@@ -522,6 +526,7 @@
 (define-private (reject-removal (miner principal))
 (begin 
   (var-set miner-to-remove-votes-remove miner)
+  (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
   (clear-votes-map-remove-vote miner)
   (ok true)))
 
@@ -727,6 +732,10 @@
   (var-set miners-list-miner-to-remove miner) 
   (ok (filter is-principal-in-miners-list (var-get miners-list)))))
 
+(define-public (remove-principal-proposed-removal-list (miner principal))
+(begin
+  (var-set proposed-removal-list-miner-to-remove miner) 
+  (ok (filter is-principal-in-proposed-removal-list (var-get proposed-removal-list)))))
 ;; MINER STATUS FUNCTIONS
 
 (define-public (check-is-miner-when-requested-join (miner-to-vote principal))
@@ -813,6 +822,9 @@
 (define-read-only (get-pending-accept-list) 
 (var-get pending-accept-list ))
 
+(define-read-only (get-proposed-removal-list) 
+(var-get proposed-removal-list ))
+
 (define-read-only (get-notifier-vote-status) 
 (var-get notifier-vote-active))
 
@@ -838,4 +850,9 @@
 (define-private (is-principal-in-miners-list (miner principal))
 (not (is-eq  
   (var-get miners-list-miner-to-remove) 
+  miner)))
+
+(define-private (is-principal-in-proposed-removal-list (miner principal))
+(not (is-eq  
+  (var-get proposed-removal-list-miner-to-remove) 
   miner)))

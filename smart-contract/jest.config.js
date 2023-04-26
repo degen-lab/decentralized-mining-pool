@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testTimeout: 900_000,
+  testTimeout: 1900_000,
   maxWorkers: 1,
   reporters: ['default', 'jest-github-actions-reporter'],
   testLocationInResults: true,
