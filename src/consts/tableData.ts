@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ReadOnlyAllDataWaitingMiners } from './readOnly';
+import { ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
 
 // data for waiting table
 
@@ -79,6 +79,71 @@ export const GetWaitingRows = () => {
             waitingValue['negative-votes'].value + '/' + waitingValue['negative-threshold'].value,
             waitingValue['positive-votes'].value + '/' + waitingValue['positive-threshold'].value,
             !waitingValue['was-blacklist'].value ? 'No' : 'Yes'
+        );
+    }) : [];
+
+    return rows;
+}
+
+// data for miners in pool table
+
+export interface MinersData {
+    id: number;
+    address: string;
+    proposeRemoval: string;
+    generalInfo: string;
+}
+
+interface MinersColumnData {
+    dataKey: keyof MinersData;
+    label: string;
+    numeric?: boolean;
+    width: number;
+}
+
+const createMinersData = (
+    id: number,
+    address: string,
+) => {
+    return { id, address };
+};
+
+export const minerColumns: MinersColumnData[] = [
+    {
+        width: 750,
+        label: 'Address',
+        dataKey: 'address',
+    },
+    {
+        width: 150,
+        label: 'Propose Removal',
+        dataKey: 'proposeRemoval',
+        numeric: true,
+    },
+    {
+        width: 120,
+        label: 'Miner Info',
+        dataKey: 'generalInfo',
+        numeric: true,
+    },
+];
+
+export const GetMinersRows = () => {
+    const [minersList, setMinersList] = useState<any>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+          const newMinersList = await ReadOnlyGetMinersList();
+          setMinersList(newMinersList.value);
+        };
+        fetchData();
+      }, [setMinersList]);
+
+    const rows = minersList ? minersList.map((miner: any, index: number) => {
+        const minerValue = miner.value;
+        return createMinersData(
+            index,
+            minerValue,
         );
     }) : [];
 

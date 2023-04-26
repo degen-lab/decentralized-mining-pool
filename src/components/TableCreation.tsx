@@ -105,7 +105,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
 
   const screenWidth = (window.innerWidth * parseFloat(customTableWidth)) / 100;
   const tableWidth = 1241.6 * (parseFloat(customTableWidth) / 100);
-  const rowHeight = tableId === 'waiting' ? 64.8 : 52.813;
+  const rowHeight = tableId === 'waiting' || tableId === 'miners' ? 64.8 : 52.813;
   const headerHeight = 57.9;
   const tableHeight =
     screenWidth >= tableWidth

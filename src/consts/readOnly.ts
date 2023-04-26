@@ -57,10 +57,10 @@ export const readOnlyAddressStatus = async (args: any) => {
     );
   };
 
-// get-all-data-waiting-miners (waiting-miners-list (list 100 principal))
-// args: 
-// what does it do:
-// return:
+// get-all-data-waiting-miners
+// args: (waiting-miners-list (list 100 principal))
+// what does it do: it returns the details for every miner in the waiting list passed as argument
+// return: details for every address
 
 export const ReadOnlyAllDataWaitingMiners = async () => {
     const newResultList: ClarityValue[] = [];
@@ -82,11 +82,11 @@ export const ReadOnlyAllDataWaitingMiners = async () => {
     return newResultList;
   };
 
-// get-all-data-miners-proposed-for-removal (removal-miners-list (list 100 principal))
-// args: 
-// what does it do:
-// return:
-//
+// get-all-data-miners-proposed-for-removal
+// args: (removal-miners-list (list 100 principal))
+// what does it do: it returns the details for every miner in the list for miners proposed for removal, passed as argument
+// return: details for every address
+
 // get-all-data-miners-pending-accept (pending-miners-list (list 100 principal))
 // args: 
 // what does it do:
@@ -148,9 +148,9 @@ export const readOnlyGetRemainingBlocksJoin = async () => {
 // return:
 //
 // get-waiting-list
-// args: 
-// what does it do:
-// return:
+// args: none
+// what does it do: returns a list of miners that are in waiting list
+// return: waiting miners list
 
 export const ReadOnlyGetWaitingList = async () => {
     const waitingList: ClarityValue = await ReadOnlyFunctions([], 'get-waiting-list');
@@ -158,10 +158,15 @@ export const ReadOnlyGetWaitingList = async () => {
   };
 
 // get-miners-list
-// args: 
-// what does it do:
-// return:
-//
+// args: none
+// what does it do: returns a list of miners that are in pool
+// return: miners in pool list
+
+export const ReadOnlyGetMinersList = async () => {
+    const minersList = cvToJSON(await ReadOnlyFunctions([], 'get-miners-list'));
+    return minersList;
+  };
+
 // get-pending-accept-list
 // args: 
 // what does it do:

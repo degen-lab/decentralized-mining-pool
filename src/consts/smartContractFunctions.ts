@@ -109,10 +109,15 @@ export const ContractAddPending = () => {
 // args: 
 // what does it do:
 //
-// propose-removal (miner-to-remove principal)
-// args: 
+// propose-removal
+// args: (miner-to-remove principal)
 // what does it do: propose a miner to be removed from the pool
-//
+
+export const ContractProposeRemoval = (args: any) => {
+  const convertedArgs = [convertPrincipalToArg(args)];
+  CallFunctions(convertedArgs, 'propose-removal')
+}
+
 // vote-positive-remove-request (miner-to-vote principal)
 // args: 
 // what does it do:

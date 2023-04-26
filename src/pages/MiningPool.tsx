@@ -9,6 +9,7 @@ import {
   ContractVoteNegativeJoin,
   ContractTryEnterPool,
   ContractAddPending,
+  ContractProposeRemoval,
 } from '../consts/smartContractFunctions';
 import { readOnlyAddressStatus, readOnlyGetRemainingBlocksJoin } from '../consts/readOnly';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
@@ -16,13 +17,23 @@ import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import Button from '@mui/material/Button';
 import { userSession } from '../components/ConnectWallet';
 import TableCreation from '../components/TableCreation';
-import { WaitingData, waitingColumns, GetWaitingRows } from '../consts/tableData';
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import InfoIcon from '@mui/icons-material/Info';
+import {
+  WaitingData,
+  waitingColumns,
+  GetWaitingRows,
+  GetMinersRows,
+  minerColumns,
+  MinersData,
+} from '../consts/tableData';
 
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const [finalStatus, setFinalStatus] = useState<string>();
   const [blocksLeftUntilJoin, setBlocksLeftUntilJoin] = useState<any>();
   const waitingRows = GetWaitingRows();
+  const minersRows = GetMinersRows();
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -49,12 +60,20 @@ const MiningPool = () => {
     ContractAddPending();
   };
 
-  const handleMinersVoteButtonClick = (data: string, address: string) => {
+  const handlePendingVoteButtonClick = (data: string, address: string) => {
     if (data === 'voteYes') {
       ContractVotePositiveJoin(address);
     } else if (data === 'voteNo') {
       ContractVoteNegativeJoin(address);
     }
+  };
+
+  const handleMinerRemoveButtonClick = (address: string) => {
+    ContractProposeRemoval(address);
+  };
+
+  const handleMinerInfoButtonClick = (address: string) => {
+    ContractVotePositiveJoin(address);
   };
 
   const waitingRowContent = (_index: number, waitingRow: WaitingData) => {
@@ -74,19 +93,62 @@ const MiningPool = () => {
                   <ThumbUpAltIcon
                     fontSize="small"
                     sx={{ color: 'green' }}
-                    onClick={() => handleMinersVoteButtonClick('voteYes', waitingRow['address'])}
+                    onClick={() => handlePendingVoteButtonClick('voteYes', waitingRow['address'])}
                   />
                 </Button>
                 <Button style={{ marginRight: -52 }}>
                   <ThumbDownAltIcon
                     fontSize="small"
                     sx={{ color: 'red' }}
-                    onClick={() => handleMinersVoteButtonClick('voteNo', waitingRow['address'])}
+                    onClick={() => handlePendingVoteButtonClick('voteNo', waitingRow['address'])}
                   />
                 </Button>
               </Box>
             ) : (
               waitingRow[column.dataKey]
+            )}
+          </TableCell>
+        ))}
+      </React.Fragment>
+    );
+  };
+
+  const minersRowContent = (_index: number, minersRow: MinersData) => {
+    return (
+      <React.Fragment>
+        {minerColumns.map((column) => (
+          <TableCell
+            key={column.dataKey}
+            align={column.dataKey == 'address' ? 'left' : 'right'}
+            sx={{
+              color: colors[currentTheme].secondary,
+            }}
+          >
+            {column.dataKey === 'proposeRemoval' ? (
+              <Box>
+                <Button sx={{ marginRight: 3 }}>
+                  <PersonRemoveIcon
+                    fontSize="small"
+                    sx={{ color: 'red' }}
+                    onClick={() => handleMinerRemoveButtonClick(minersRow['address'])}
+                  />
+                </Button>
+              </Box>
+            ) : (
+              minersRow[column.dataKey]
+            )}
+            {column.dataKey === 'generalInfo' ? (
+              <Box>
+                <Button>
+                  <InfoIcon
+                    fontSize="small"
+                    sx={{ color: colors[currentTheme].secondary }}
+                    onClick={() => handleMinerInfoButtonClick(minersRow['address'])}
+                  />
+                </Button>
+              </Box>
+            ) : (
+              minersRow[column.dataKey]
             )}
           </TableCell>
         ))}
@@ -145,6 +207,13 @@ const MiningPool = () => {
         rowContent={waitingRowContent}
         columns={waitingColumns}
         tableId="waiting"
+        customTableWidth="75%"
+      />
+      <TableCreation
+        rows={minersRows}
+        rowContent={minersRowContent}
+        columns={minerColumns}
+        tableId="miners"
         customTableWidth="75%"
       />
     </Box>
