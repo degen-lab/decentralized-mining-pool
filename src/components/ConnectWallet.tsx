@@ -37,7 +37,7 @@ const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
     dispatch(disconnectAction());
   };
 
-  const authenticate = async () => {
+  const authenticate = () => {
     dispatch(connectAction());
   };
 
