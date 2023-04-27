@@ -16,7 +16,6 @@ import Poll from '@mui/icons-material/Poll';
 import Movie from '@mui/icons-material/Movie';
 import { Link } from 'react-router-dom';
 import colors from '../consts/colors';
-import { MenuItem } from '@mui/material';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 

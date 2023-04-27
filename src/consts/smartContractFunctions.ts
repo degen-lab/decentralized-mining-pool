@@ -1,7 +1,7 @@
 import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network, transactionUrl } from './network';
 import { contractMapping } from './contract';
-import { openContractCall } from '@stacks/connect';
+import { openContractCall, FinishedTxData } from '@stacks/connect';
 import {
   AnchorMode,
   PostConditionMode,
@@ -20,7 +20,7 @@ const CallFunctions = (function_args: any, contractFunctionName: string) => {
       functionArgs: function_args,
       postConditionMode: PostConditionMode.Deny,
       postConditions: [],
-      onFinish: (data: any) => {
+      onFinish: (data: FinishedTxData) => {
         console.log(transactionUrl[network](data.txId).explorerUrl);
         console.log(transactionUrl[network](data.txId).apiUrl)
       },

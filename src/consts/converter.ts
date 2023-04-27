@@ -1,17 +1,9 @@
 import {
-  broadcastTransaction,
-  cvToHex,
   cvToValue,
-  cvToJSON,
-  hexToCV,
   listCV,
-  intCV,
-  makeContractCall,
-  PostConditionMode,
-  standardPrincipalCV,
-  stringAsciiCV,
   uintCV,
   ClarityValue,
+  ListCV,
 } from '@stacks/transactions';
 import { network } from './network';
 
@@ -56,11 +48,11 @@ export const isPrincipal = (str: string) => {
   return false;
 };
 
-export const fromResultToList = (result: any, start: number, end: number) => {
-  let listArg: any[] = [];
-  let convertedArg: any[] = [];
+export const fromResultToList = (result: ClarityValue, start: number, end: number) => {
+  let listArg: ClarityValue[] = [];
+  let convertedArg: ClarityValue[] = [];
   
-  result.list.forEach((x:any) => listArg.push(x));
+  (result as ListCV).list.forEach((x:any) => listArg.push(x));
   listArg.slice(start, end).forEach((x:any) => convertedArg.push(x))
   
   return listCV(convertedArg);

@@ -37,6 +37,7 @@ const MiningPool = () => {
   const [blocksLeftUntilJoin, setBlocksLeftUntilJoin] = useState<any>();
   const waitingRows = GetWaitingRows();
   const minersRows = GetMinersRows();
+  // will add later, after read_length too big is solved
   // const removalRows = GetRemovalsRows();
 
   useEffect(() => {
@@ -225,36 +226,3 @@ const MiningPool = () => {
 };
 
 export default MiningPool;
-
-// done:
-// STATUS: waiting
-// ask to join
-// table - waiting list
-// voting waiting
-// try-enter
-// display current user STATUS
-// modify contract name to "-5"
-// // check if modular needed/different
-
-// TODO:
-// STATUS: pending
-// read-only for pending
-// table - pending list
-// address, blocks-till can join get-data-miner-pending-accept
-// blocks-till pass should be done separately
-
-// button: check if enough blocks passed readOnly
-// can-call-add-miners true/false
-// button add-pending-miners-to-pool
-
-// STATUS: miner
-// table - miners list
-// include
-
-// GENERAL INFO
-// Notifier: read only and displayed
-// list of miners:
-// number of blocks won: read only
-// stacks rewards: read only
-
-//

@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { ReadOnlyAllDataProposedRemovalMiners, ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
 
+// data interface for all tables, used as type in TableCreation
+
+export interface AllTableData {
+    id: number;
+    address: string;
+    negativeVotes: string;
+    vote: string;
+    positiveVotes: string;
+    wasBlacklisted: string;
+    proposeRemoval: string;
+    generalInfo: string;
+}
+
 // data for waiting table
 
 export interface WaitingData {

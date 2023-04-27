@@ -12,6 +12,7 @@ import { TableVirtuoso, TableComponents } from 'react-virtuoso';
 import { TableSortLabel } from '@mui/material';
 import useCurrentTheme from '../consts/currentTheme';
 import colors from '../consts/colors';
+import { AllTableData } from '../consts/tableData';
 
 const VirtuosoTableComponents: TableComponents<any> = {
   Scroller: React.forwardRef<HTMLDivElement>((props, ref) => <TableContainer component={Paper} {...props} ref={ref} />),
@@ -21,11 +22,30 @@ const VirtuosoTableComponents: TableComponents<any> = {
   TableBody: React.forwardRef<HTMLTableSectionElement>((props, ref) => <TableBody {...props} ref={ref} />),
 };
 
-const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }: any) => {
+interface rowsProps {
+  id: number;
+  address: string;
+}
+
+interface columnsProps {
+  width: number;
+  label: string;
+  dataKey: string;
+}
+
+interface TableCreationProps {
+  rows: AllTableData[];
+  rowContent: (index: number, row: AllTableData) => JSX.Element;
+  columns: columnsProps[];
+  tableId: string;
+  customTableWidth: string;
+}
+
+const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }: TableCreationProps) => {
   const { currentTheme } = useCurrentTheme();
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [orderBy, setOrderBy] = React.useState<any>();
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [orderBy, setOrderBy] = React.useState<string>();
 
   const totalRows = rows.length;
 
@@ -39,7 +59,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
   };
 
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
-  const [sortedColumn, setSortedColumn] = React.useState<any>('id');
+  const [sortedColumn, setSortedColumn] = React.useState<keyof rowsProps>('id');
 
   const fixedHeaderContent = () => {
     return (
@@ -103,22 +123,14 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
     return sortedRows;
   }, [rows, sortedColumn, sortDirection]);
 
-  const screenWidth = (window.innerWidth * parseFloat(customTableWidth)) / 100;
-  const tableWidth = 1241.6 * (parseFloat(customTableWidth) / 100);
-  const rowHeight = tableId === 'waiting' || tableId === 'miners' ? 64.8 : 52.813;
+  const rowHeight = tableId === 'waiting' || tableId === 'miners' ? 64.8 : 52.813; // row height per table ids, to get table's height
   const headerHeight = 57.9;
   const tableHeight =
-    screenWidth >= tableWidth
-      ? rowsPerPage < totalRows
-        ? (page + 1) * rowsPerPage < totalRows
-          ? rowsPerPage * rowHeight + headerHeight
-          : (totalRows - rowsPerPage * page) * rowHeight + headerHeight
-        : totalRows * rowHeight + headerHeight
-      : rowsPerPage < totalRows
+    rowsPerPage < totalRows
       ? (page + 1) * rowsPerPage < totalRows
-        ? rowsPerPage * rowHeight + headerHeight + 16.15
-        : (totalRows - rowsPerPage * page) * rowHeight + headerHeight + 16.15
-      : totalRows * rowHeight + headerHeight + 16.15;
+        ? rowsPerPage * rowHeight + headerHeight
+        : (totalRows - rowsPerPage * page) * rowHeight + headerHeight
+      : totalRows * rowHeight + headerHeight;
 
   return (
     <Box

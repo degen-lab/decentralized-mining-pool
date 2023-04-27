@@ -12,7 +12,7 @@ import { convertPrincipalToArg, fromResultToList, convertCVToValue } from './con
 
 const contractNetwork = network === 'mainnet' ? new StacksMainnet() : (network === 'testnet' ? new StacksTestnet() : new StacksMocknet())
 
-const ReadOnlyFunctions = async (function_args: any, contractFunctionName: string) => {
+const ReadOnlyFunctions = async (function_args: ClarityValue[], contractFunctionName: string) => {
     const userAddress =
       network == 'mainnet'
         ? userSession.loadUserData().profile.stxAddress.mainnet
@@ -35,13 +35,12 @@ const ReadOnlyFunctions = async (function_args: any, contractFunctionName: strin
 // what does it do: It returns the formatted status of the given address
 // return: 'Miner', 'Waiting', 'Pending', or 'Not Asked to Join'
 
-export const readOnlyAddressStatus = async (args: any) => {
-    const statusArgs = userSession.isUserSignedIn()
-        ? convertPrincipalToArg(args)
-        : 'none';
+export const readOnlyAddressStatus = async (args: string) => {
+    const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no'
+    const statusArgs = convertPrincipalToArg(args)
         
     const status =
-      args !== 'none'
+      isUserLogged === 'yes'
         ? await ReadOnlyFunctions([statusArgs], 'get-address-status')
         : { value: { data: 'is-none' } };
 
