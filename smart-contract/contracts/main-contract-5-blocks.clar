@@ -136,7 +136,7 @@
             (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u2) 
             u2 
             (+ (- (unwrap-panic (get-n-at-block-asked-to-join miner)) (unwrap-panic (get-k-at-block-asked-to-join miner))) u1))),
-      was-blacklist: (unwrap-panic (get value (map-get? map-blacklist {address: miner})))
+      was-blacklist: (if (is-some (get value (map-get? map-blacklist {address: miner}))) (unwrap-panic (get value (map-get? map-blacklist {address: miner}))) false)
     })))
 
 ;; proposed for removal miners
@@ -146,8 +146,9 @@
 
 (define-private (get-data-miner-proposed-for-removal (miner principal)) 
 (begin 
-  (asserts! (is-some (get value (map-get? map-is-pending {address: miner}))) err-not-pending)
-  (asserts! (unwrap-panic (get value (map-get? map-is-pending {address: miner}))) err-not-pending)
+  ;; TODO: isn't it the same with is-some and unwrap-panic?
+  (asserts! (is-some (get value (map-get? map-is-proposed-for-removal {address: miner}))) err-not-pending)
+  (asserts! (unwrap-panic (get value (map-get? map-is-proposed-for-removal {address: miner}))) err-not-pending)
   (ok 
     {
       miner: miner,
@@ -189,6 +190,14 @@
       miner: miner,
       remaining-blocks-until-join: (- blocks-to-pass (- block-height (var-get last-join-done)))
     })))
+
+(define-read-only (get-remaining-blocks-until-join)
+  (if (> blocks-to-pass (- block-height (var-get last-join-done)))
+  
+    (- blocks-to-pass (- block-height (var-get last-join-done)))
+    u0
+  )
+)
 
 ;; blocks number as miner
 
@@ -403,7 +412,7 @@
 (define-private (update-threshold) 
 (var-set k (/ (* (var-get k-percentage) (- (var-get n) u1)) u100)))
 
-(define-public (add-miner-to-pool (miner principal))
+(define-private (add-miner-to-pool (miner principal))
 (begin 
   (map-delete map-is-pending {address: miner})
   (map-set map-is-miner {address: miner} {value: true})
@@ -714,29 +723,29 @@
 
 ;; LIST PROCESSING FUNCTIONS
 
-(define-public (remove-principal-waiting-list (miner principal))
+(define-private (remove-principal-waiting-list (miner principal))
 (begin
     (var-set waiting-list-miner-to-remove miner) 
     (ok (filter is-principal-in-waiting-list (var-get waiting-list))))) 
 
-(define-public (remove-principal-pending-accept-list (miner principal))
+(define-private (remove-principal-pending-accept-list (miner principal))
 (begin 
     (var-set waiting-list-miner-to-remove miner) 
     (ok (filter is-principal-in-pending-accept-list (var-get pending-accept-list)))))
 
-(define-public (remove-principal-miners-list (miner principal))
+(define-private (remove-principal-miners-list (miner principal))
 (begin
   (var-set miners-list-miner-to-remove miner) 
   (ok (filter is-principal-in-miners-list (var-get miners-list)))))
 
-(define-public (remove-principal-proposed-removal-list (miner principal))
+(define-private (remove-principal-proposed-removal-list (miner principal))
 (begin
   (var-set proposed-removal-list-miner-to-remove miner) 
   (ok (filter is-principal-in-proposed-removal-list (var-get proposed-removal-list)))))
 
 ;; MINER STATUS FUNCTIONS
 
-(define-public (check-is-miner-when-requested-join (miner-to-vote principal))
+(define-private (check-is-miner-when-requested-join (miner-to-vote principal))
 (ok (if 
   (is-some 
     (at-block (unwrap! (get-block-info? id-header-hash 
@@ -752,7 +761,7 @@
             (unwrap-panic (get value (map-get? map-is-miner {address: tx-sender}))))
   false)))
 
-(define-public (check-is-miner-when-requested-remove (miner-to-vote principal))
+(define-private (check-is-miner-when-requested-remove (miner-to-vote principal))
 (ok (if 
   (is-some 
     (at-block (unwrap! (get-block-info? id-header-hash 
@@ -786,6 +795,12 @@
   (unwrap-panic (get value (map-get? map-is-waiting {address: miner})))
   false))
 
+(define-private (check-is-pending-now (miner principal))
+(if (is-some (get value (map-get? map-is-pending {address: miner})))
+  (unwrap-panic (get value (map-get? map-is-pending {address: miner})))
+  false)
+)
+
 (define-private (get-reward-at-block (block-number uint)) 
 (begin 
   {reward: (get-block-info? block-reward block-number), 
@@ -796,6 +811,18 @@
   {reward: (get-block-info? block-reward block-number), 
   claimer: (get-block-info? miner-address block-number)
   }))
+
+(define-read-only (get-address-status (address principal))
+(if (check-is-miner-now address)
+  (ok "is-miner")
+  (if (check-is-waiting-now address)
+    (ok "is-waiting")
+    (if (check-is-pending-now address)
+      (ok "is-pending")
+      (ok "is-none")
+    )
+  )
+))
 
 ;; READ-ONLY UTILS
 
@@ -819,6 +846,9 @@
 
 (define-read-only (get-pending-accept-list) 
 (var-get pending-accept-list ))
+
+(define-read-only (get-proposed-removal-list) 
+(var-get proposed-removal-list ))
 
 (define-read-only (get-notifier-vote-status) 
 (var-get notifier-vote-active))
