@@ -26,6 +26,9 @@ import {
   GetMinersRows,
   minerColumns,
   MinersData,
+  RemovalsData,
+  removalsColumns,
+  GetRemovalsRows,
 } from '../consts/tableData';
 
 const MiningPool = () => {
@@ -34,6 +37,7 @@ const MiningPool = () => {
   const [blocksLeftUntilJoin, setBlocksLeftUntilJoin] = useState<any>();
   const waitingRows = GetWaitingRows();
   const minersRows = GetMinersRows();
+  // const removalRows = GetRemovalsRows();
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -47,7 +51,7 @@ const MiningPool = () => {
   useEffect(() => {
     const fetchBlocksLeft = async () => {
       const blocksLeft = await readOnlyGetRemainingBlocksJoin();
-      setBlocksLeftUntilJoin(Number(blocksLeft));
+      setBlocksLeftUntilJoin(blocksLeft);
     };
     fetchBlocksLeft();
   }, [setBlocksLeftUntilJoin]);

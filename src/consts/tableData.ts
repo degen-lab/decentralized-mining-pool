@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
+import { ReadOnlyAllDataProposedRemovalMiners, ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
 
 // data for waiting table
 
@@ -144,6 +144,92 @@ export const GetMinersRows = () => {
         return createMinersData(
             index,
             minerValue,
+        );
+    }) : [];
+
+    return rows;
+}
+
+// data for removals table
+
+export interface RemovalsData {
+    id: number;
+    address: string;
+    negativeVotes: string;
+    vote: string;
+    positiveVotes: string;
+    warnings: number;
+    minerBlocks: number;
+}
+
+interface RemovalsColumnData {
+    dataKey: keyof RemovalsData;
+    label: string;
+    numeric?: boolean;
+    width: number;
+}
+
+const createRemovalsData = (
+    id: number,
+    address: string,
+    negativeVotes: string,
+    positiveVotes: string,
+    warnings: number,
+    minerBlocks: number,
+) => {
+    return { id, address, negativeVotes, positiveVotes, warnings, minerBlocks };
+};
+
+export const removalsColumns: RemovalsColumnData[] = [
+    {
+        width: 400,
+        label: 'Address',
+        dataKey: 'address',
+    },
+    {
+        width: 130,
+        label: 'Negative Votes',
+        dataKey: 'negativeVotes',
+        numeric: true,
+    },
+    {
+        width: 120,
+        label: 'Positive Votes',
+        dataKey: 'positiveVotes',
+        numeric: true,
+    },
+    {
+        width: 120,
+        label: 'Vote',
+        dataKey: 'vote',
+        numeric: true,
+    },
+    {
+        width: 120,
+        label: 'Warnings',
+        dataKey: 'warnings',
+    },
+    {
+        width: 120,
+        label: 'Blocks as Miner',
+        dataKey: 'minerBlocks',
+    },
+];
+
+export const GetRemovalsRows = () => {
+    const [removalsList, setRemovalsList] = useState<any>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+          const newRemovalsList = await ReadOnlyAllDataProposedRemovalMiners();
+          setRemovalsList(newRemovalsList);
+        };
+        fetchData();
+      }, [setRemovalsList]);
+
+    const rows = removalsList ? removalsList.map((miner: any, index: number) => {
+        const removalsValue = miner;
+        return createRemovalsData(index, '', '', '', 0, 0
         );
     }) : [];
 

@@ -74,7 +74,7 @@ export const ReadOnlyAllDataWaitingMiners = async () => {
     ) {
       const newWaitingList = fromResultToList(fullWaitingList, currentIndex, currentIndex + step);
       const newResult = await ReadOnlyFunctions([newWaitingList], 'get-all-data-waiting-miners');
-  
+
       if (newResult) {
         newResultList.push(cvToJSON(newResult));
       }
@@ -82,10 +82,40 @@ export const ReadOnlyAllDataWaitingMiners = async () => {
     return newResultList;
   };
 
+// get-proposed-removal-list
+// args: none
+// what does it do: returns a list of miners that are proposed for removal
+// return: proposed for removal miners list
+
+export const ReadOnlyGetProposedRemovalList = async () => {
+    const removalList: ClarityValue = await ReadOnlyFunctions([], 'get-proposed-removal-list');
+    return removalList;
+  };
+
 // get-all-data-miners-proposed-for-removal
 // args: (removal-miners-list (list 100 principal))
 // what does it do: it returns the details for every miner in the list for miners proposed for removal, passed as argument
 // return: details for every address
+
+export const ReadOnlyAllDataProposedRemovalMiners = async () => {
+    const newResultList: ClarityValue[] = [];
+    const fullRemovalsList: ClarityValue = await ReadOnlyGetProposedRemovalList()
+    const step = 1;
+  
+    for (
+      let currentIndex = 0;
+      currentIndex < (fullRemovalsList as ListCV).list.length;
+      currentIndex = currentIndex + step
+    ) {
+      const newRemovalsList = fromResultToList(fullRemovalsList, currentIndex, currentIndex + step);
+      const newResult = await ReadOnlyFunctions([newRemovalsList], 'get-all-data-miners-proposed-for-removal');
+
+      if (newResult) {
+        newResultList.push(cvToJSON(newResult));
+      }
+    }
+    return newResultList;
+  };
 
 // get-all-data-miners-pending-accept (pending-miners-list (list 100 principal))
 // args: 
@@ -99,7 +129,7 @@ export const ReadOnlyAllDataWaitingMiners = async () => {
 
 export const readOnlyGetRemainingBlocksJoin = async () => {
     const blocksLeft = await ReadOnlyFunctions([], 'get-remaining-blocks-until-join');
-    return convertCVToValue(blocksLeft);
+    return Number(convertCVToValue(blocksLeft));
   };
 
 // get-all-data-miners-blocks (local-miners-list (list 100 principal))
@@ -187,3 +217,12 @@ export const ReadOnlyGetMinersList = async () => {
 // what does it do:
 // return:
 //
+// get-notifier-vote-status
+// args: 
+// what does it do:
+// return:
+//
+// get-reward-at-block-read
+// args: 
+// what does it do:
+// return:
