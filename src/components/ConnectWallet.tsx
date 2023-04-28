@@ -1,14 +1,14 @@
-import { AppConfig, UserSession } from '@stacks/connect';
+import { AppConfig } from '@stacks/connect';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import colors from '../consts/Colors';
 import { useAppDispatch, useAppSelector } from '../redux/store';
-import { connectAction, disconnectAction } from '../redux/actions';
-import { selectUsereSessionState } from '../redux/reducers/user-state';
+import { connectAction, disconnectAction, updateUserRoleAction } from '../redux/actions';
+import { selectCurrentUserRole, selectUsereSessionState } from '../redux/reducers/user-state';
+import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
-
-// export const userSession = new UserSession({ appConfig });
 
 interface ConnectWalletProps {
   currentTheme: string;
@@ -17,6 +17,21 @@ interface ConnectWalletProps {
 const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
   const userSession = useAppSelector(selectUsereSessionState);
   const dispatch = useAppDispatch();
+
+  const currentRole = useAppSelector(selectCurrentUserRole);
+  const location = useLocation();
+
+  const controlAccessRoutes = () => {
+    if (location.pathname !== '/') {
+      if (location.pathname.substring(1).toLowerCase() !== currentRole.toLowerCase()) {
+        console.log('Seems like you got lost, click here to go back to the main page');
+      }
+    }
+  };
+
+  useEffect(() => {
+    controlAccessRoutes();
+  }, [location]);
 
   const disconnect = () => {
     dispatch(disconnectAction());
@@ -27,6 +42,10 @@ const ConnectWallet = ({ currentTheme }: ConnectWalletProps) => {
   };
 
   if (userSession.isUserSignedIn()) {
+    if (currentRole === 'Viewer') {
+      dispatch(updateUserRoleAction());
+      return <div>Loading role...</div>;
+    }
     return (
       <div>
         <button className="Connect" style={{ backgroundColor: colors[currentTheme].primary }} onClick={disconnect}>

@@ -1,5 +1,5 @@
 import { IUserState, defaultUserState, selectUsereSessionState } from './user-state';
-import { DISCONNECT_USER_SESSION, CONNECT_USER_SESSION } from '../actions';
+import { DISCONNECT_USER_SESSION, CONNECT_USER_SESSION, UPDATE_USER_ROLE } from '../actions';
 
 import { showConnect } from '@stacks/connect';
 
@@ -33,9 +33,11 @@ const mainReducer = (state = initialState, action: IreduxAction) => {
       });
       return state;
     case DISCONNECT_USER_SESSION:
-      state.userState.userSession.signUserOut('/');
+      state.userState.userSession.signUserOut('/dashboard');
       console.log('Disconnect');
       return state;
+    case UPDATE_USER_ROLE:
+      return { ...state, userState: { ...state.userState, userRole: action.payload } };
     default:
       return state;
   }
