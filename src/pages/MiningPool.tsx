@@ -1,8 +1,8 @@
 import * as React from 'react';
 import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
-import useCurrentTheme from '../consts/currentTheme';
-import colors from '../consts/colors';
+import useCurrentTheme from '../consts/theme';
+import colors from '../consts/colorPallete';
 import { useEffect, useState } from 'react';
 import {
   ContractVotePositiveJoin,
