@@ -34,7 +34,7 @@ import {
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const [finalStatus, setFinalStatus] = useState<string>();
-  const [blocksLeftUntilJoin, setBlocksLeftUntilJoin] = useState<any>();
+  const [blocksLeftUntilJoin, setBlocksLeftUntilJoin] = useState<number>();
   const waitingRows = GetWaitingRows();
   const minersRows = GetMinersRows();
   // will add later, after read_length too big is solved

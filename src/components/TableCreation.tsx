@@ -45,7 +45,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
   const { currentTheme } = useCurrentTheme();
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
-  const [orderBy, setOrderBy] = React.useState<string>();
+  const [orderBy, setOrderBy] = React.useState<keyof AllTableData>();
 
   const totalRows = rows.length;
 
@@ -59,12 +59,12 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
   };
 
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
-  const [sortedColumn, setSortedColumn] = React.useState<keyof rowsProps>('id');
+  const [sortedColumn, setSortedColumn] = React.useState<keyof AllTableData>('id');
 
   const fixedHeaderContent = () => {
     return (
       <TableRow>
-        {columns.map((column: any) => (
+        {columns.map((column: columnsProps) => (
           <TableCell
             key={column.dataKey}
             variant="head"
@@ -89,7 +89,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
               }}
               active={orderBy === column.dataKey}
               direction={orderBy === column.dataKey ? sortDirection : 'asc'}
-              onClick={() => handleSortClick(column.dataKey)}
+              onClick={() => handleSortClick(column.dataKey as keyof AllTableData)}
             >
               {column.label}
             </TableSortLabel>
@@ -99,7 +99,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
     );
   };
 
-  const handleSortClick = (column: any) => {
+  const handleSortClick = (column: keyof AllTableData) => {
     if (column === sortedColumn) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {

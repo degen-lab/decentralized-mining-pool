@@ -5,12 +5,13 @@ import { openContractCall, FinishedTxData } from '@stacks/connect';
 import {
   AnchorMode,
   PostConditionMode,
+  ClarityValue
 } from '@stacks/transactions';
 import { convertPrincipalToArg } from './converter';
 
 const contractNetwork = network === 'mainnet' ? new StacksMainnet() : (network === 'testnet' ? new StacksTestnet() : new StacksMocknet())
 
-const CallFunctions = (function_args: any, contractFunctionName: string) => {  
+const CallFunctions = (function_args: ClarityValue[], contractFunctionName: string) => {  
     const options = {
       network: contractNetwork,
       anchorMode: AnchorMode.Any,
@@ -52,7 +53,7 @@ const CallFunctions = (function_args: any, contractFunctionName: string) => {
 // what does it do: When an user asks to join, they will be placed in a waiting list. With this function, you can vote for him to
 //                  join the miners list.
 
-export const ContractVotePositiveJoin = (args: any) => {
+export const ContractVotePositiveJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
   CallFunctions(convertedArgs, 'vote-positive-join-request')
 }
@@ -62,7 +63,7 @@ export const ContractVotePositiveJoin = (args: any) => {
 // what does it do: When an user asks to join, they will be placed in a waiting list. With this function, you can vote against him
 //                  joining the miners list.
 
-export const ContractVoteNegativeJoin = (args: any) => {
+export const ContractVoteNegativeJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
   CallFunctions(convertedArgs, 'vote-negative-join-request')
 }
@@ -80,7 +81,7 @@ export const ContractTryEnterPool = () => {
 // args: (btc-address principal)
 // what does it do: This function adds the user passed as argument to the waiting list
 
-export const ContractAskToJoin = (args: any) => {
+export const ContractAskToJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
   CallFunctions(convertedArgs, 'ask-to-join')
 }
@@ -113,7 +114,7 @@ export const ContractAddPending = () => {
 // args: (miner-to-remove principal)
 // what does it do: propose a miner to be removed from the pool
 
-export const ContractProposeRemoval = (args: any) => {
+export const ContractProposeRemoval = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
   CallFunctions(convertedArgs, 'propose-removal')
 }

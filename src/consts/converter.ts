@@ -10,18 +10,6 @@ import { network } from './network';
 import { stringCV } from '@stacks/transactions/dist/clarity/types/stringCV.js';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV.js';
 
-// TODO: probably delete this
-// // format: "{'keyA':'valueA', 'keyB':'valueB', keyC':'valueC'}",
-// export const stringToMap = (text) => {
-//   text = text.slice(1, -1);
-//   let mapConverted = {};
-//   text.split(',').forEach((keyValue) => {
-//     const splitted = keyValue.split(':');
-//     mapConverted[splitted[0].split("'")[1]] = splitted[1];
-//   });
-//   return mapConverted;
-// };
-
 export const convertIntToArg = (number: number) => {
   return uintCV(number);
 };
@@ -39,9 +27,7 @@ export const convertPrincipalToArg = (principal: string) => {
 };
 
 export const isPrincipal = (str: string) => {
-  let secondChar = 'P';
-  str = str.toString();
-  if (network !== 'mainnet') secondChar = 'T';
+  const secondChar = network !== 'mainnet' ? 'T' : 'P';
   if (str.charAt(0) === 'S' && str.charAt(1) === secondChar && str.length >= 39 && str.length <= 41) {
     return true;
   }
@@ -52,8 +38,8 @@ export const fromResultToList = (result: ClarityValue, start: number, end: numbe
   let listArg: ClarityValue[] = [];
   let convertedArg: ClarityValue[] = [];
   
-  (result as ListCV).list.forEach((x:any) => listArg.push(x));
-  listArg.slice(start, end).forEach((x:any) => convertedArg.push(x))
+  (result as ListCV).list.forEach((x: ClarityValue) => {listArg.push(x)});
+  listArg.slice(start, end).forEach((x: ClarityValue) => convertedArg.push(x))
   
   return listCV(convertedArg);
 };
