@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { ReadOnlyAllDataProposedRemovalMiners, ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
-import { ClarityValue, SomeCV } from '@stacks/transactions';
 
 // data interface for all tables, used as type in TableCreation
 

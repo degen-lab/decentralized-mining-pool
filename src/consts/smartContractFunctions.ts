@@ -2,51 +2,32 @@ import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network, transactionUrl } from './network';
 import { contractMapping } from './contract';
 import { openContractCall, FinishedTxData } from '@stacks/connect';
-import {
-  AnchorMode,
-  PostConditionMode,
-  ClarityValue
-} from '@stacks/transactions';
+import { AnchorMode, PostConditionMode, ClarityValue } from '@stacks/transactions';
 import { convertPrincipalToArg } from './converter';
 
-const contractNetwork = network === 'mainnet' ? new StacksMainnet() : (network === 'testnet' ? new StacksTestnet() : new StacksMocknet())
+const contractNetwork =
+  network === 'mainnet' ? new StacksMainnet() : network === 'testnet' ? new StacksTestnet() : new StacksMocknet();
 
-const CallFunctions = (function_args: ClarityValue[], contractFunctionName: string) => {  
-    const options = {
-      network: contractNetwork,
-      anchorMode: AnchorMode.Any,
-      contractAddress: contractMapping[network].contractAddress,
-      contractName: contractMapping[network].contractName,
-      functionName: contractFunctionName,
-      functionArgs: function_args,
-      postConditionMode: PostConditionMode.Deny,
-      postConditions: [],
-      onFinish: (data: FinishedTxData) => {
-        console.log(transactionUrl[network](data.txId).explorerUrl);
-        console.log(transactionUrl[network](data.txId).apiUrl)
-      },
-      onCancel: () => {
-        console.log('onCancel:', 'Transaction was canceled');
-      },
-    };
-    openContractCall(options)
+const CallFunctions = (function_args: ClarityValue[], contractFunctionName: string) => {
+  const options = {
+    network: contractNetwork,
+    anchorMode: AnchorMode.Any,
+    contractAddress: contractMapping[network].contractAddress,
+    contractName: contractMapping[network].contractName,
+    functionName: contractFunctionName,
+    functionArgs: function_args,
+    postConditionMode: PostConditionMode.Deny,
+    postConditions: [],
+    onFinish: (data: FinishedTxData) => {
+      console.log(transactionUrl[network](data.txId).explorerUrl);
+      console.log(transactionUrl[network](data.txId).apiUrl);
+    },
+    onCancel: () => {
+      console.log('onCancel:', 'Transaction was canceled');
+    },
+  };
+  openContractCall(options);
 };
-
-// function vote-accept-waiting() {
-// convert_address_to_CV
-// general_modular_call(contract_address, contract_name, function_name, [user_address])
-// }
-
-
-// add-pending-miners-to-pool
-// and
-// try-enter
-
-
-
-
-
-
 
 // vote-positive-join-request
 // args: (miner-to-vote principal)
@@ -55,8 +36,8 @@ const CallFunctions = (function_args: ClarityValue[], contractFunctionName: stri
 
 export const ContractVotePositiveJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'vote-positive-join-request')
-}
+  CallFunctions(convertedArgs, 'vote-positive-join-request');
+};
 
 // vote-negative-join-request
 // args: (miner-to-vote principal)
@@ -65,8 +46,8 @@ export const ContractVotePositiveJoin = (args: string) => {
 
 export const ContractVoteNegativeJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'vote-negative-join-request')
-}
+  CallFunctions(convertedArgs, 'vote-negative-join-request');
+};
 
 // try-enter-pool
 // args: none
@@ -74,8 +55,8 @@ export const ContractVoteNegativeJoin = (args: string) => {
 //                  (the user needs to pass the positive votes threshold)
 
 export const ContractTryEnterPool = () => {
-  CallFunctions([], 'try-enter-pool')
-}
+  CallFunctions([], 'try-enter-pool');
+};
 
 // ask-to-join
 // args: (btc-address principal)
@@ -83,19 +64,19 @@ export const ContractTryEnterPool = () => {
 
 export const ContractAskToJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'ask-to-join')
-}
+  CallFunctions(convertedArgs, 'ask-to-join');
+};
 
-// deposit-stx (amount uint)
-// args: 
-// what does it do:
+// deposit-stx
+// args: (amount uint)
+// what does it do: deposits stx into user's account
 //
-// withdraw-stx (amount uint)
-// args: 
-// what does it do:
+// withdraw-stx
+// args: (amount uint)
+// what does it do: withdraws stx from user's account
 //
-// reward-distribution (block-number uint)
-// args: 
+// reward-distribution
+// args: (block-number uint)
 // what does it do: distributes rewards for a given block
 
 // add-pending-miners-to-pool
@@ -103,12 +84,12 @@ export const ContractAskToJoin = (args: string) => {
 // what does it do: It adds all the pending miners from pending list to pool
 
 export const ContractAddPending = () => {
-  CallFunctions([], 'add-pending-miners-to-pool')
-}
+  CallFunctions([], 'add-pending-miners-to-pool');
+};
 
 // leave-pool
-// args: 
-// what does it do:
+// args: none
+// what does it do: makes the user leave the mining pool
 //
 // propose-removal
 // args: (miner-to-remove principal)
@@ -116,29 +97,29 @@ export const ContractAddPending = () => {
 
 export const ContractProposeRemoval = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'propose-removal')
-}
+  CallFunctions(convertedArgs, 'propose-removal');
+};
 
-// vote-positive-remove-request (miner-to-vote principal)
-// args: 
-// what does it do:
+// vote-positive-remove-request
+// args: (miner-to-vote principal)
+// what does it do: add 1 to the positive votes to remove the user passed as argument
 //
-// vote-negative-remove-request (miner-to-vote principal)
-// args: 
-// what does it do:
+// vote-negative-remove-request
+// args: (miner-to-vote principal)
+// what does it do: add 1 to the negative votes to remove the user passed as argument
 //
 // start-vote-notifier
-// args: 
-// what does it do:
+// args: none
+// what does it do: starts the vote to elect a notifier
 //
 // end-vote-notifier
-// args: 
-// what does it do:
+// args: none
+// what does it do: ends the vote for the notifier election
 //
-// vote-notifier (voted-notifier principal)
-// args: 
-// what does it do:
+// vote-notifier
+// args: (voted-notifier principal)
+// what does it do: adds a vote to the given notifier
 //
-// warn-miner (miner principal)
-// args: 
-// what does it do:
+// warn-miner
+// args: (miner principal)
+// what does it do: warns the user passed as argument
