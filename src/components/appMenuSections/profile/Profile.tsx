@@ -16,7 +16,12 @@ const Profile = () => {
     Miner: <MinerProfile />,
   };
 
-  return profileMapping[currentRole];
+  return (
+    <div>
+      <h2>Profile</h2>
+      {profileMapping[currentRole]}
+    </div>
+  );
 };
 
 export default Profile;
