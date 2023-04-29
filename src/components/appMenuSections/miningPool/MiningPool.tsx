@@ -1,8 +1,8 @@
 import * as React from 'react';
 import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
-import useCurrentTheme from '../consts/theme';
-import colors from '../consts/colorPallete';
+import useCurrentTheme from '../../../consts/theme';
+import colors from '../../../consts/colorPallete';
 import { useEffect, useState } from 'react';
 import {
   ContractVotePositiveJoin,
@@ -10,13 +10,12 @@ import {
   ContractTryEnterPool,
   ContractAddPending,
   ContractProposeRemoval,
-} from '../consts/smartContractFunctions';
-import { readOnlyAddressStatus, readOnlyGetRemainingBlocksJoin } from '../consts/readOnly';
+} from '../../../consts/smartContractFunctions';
+import { readOnlyAddressStatus, readOnlyGetRemainingBlocksJoin } from '../../../consts/readOnly';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import Button from '@mui/material/Button';
-import { userSession } from '../components/ConnectWallet';
-import TableCreation from '../components/TableCreation';
+import TableCreation from '../../../components/TableCreation';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
 import {
@@ -29,7 +28,8 @@ import {
   RemovalsData,
   removalsColumns,
   GetRemovalsRows,
-} from '../consts/tableData';
+} from '../../../consts/tableData';
+import { userSession } from '../../../redux/reducers/user-state';
 
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
@@ -87,7 +87,7 @@ const MiningPool = () => {
         {waitingColumns.map((column) => (
           <TableCell
             key={column.dataKey}
-            align={column.dataKey == 'address' ? 'left' : 'right'}
+            align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
               color: colors[currentTheme].secondary,
             }}
@@ -124,7 +124,7 @@ const MiningPool = () => {
         {minerColumns.map((column) => (
           <TableCell
             key={column.dataKey}
-            align={column.dataKey == 'address' ? 'left' : 'right'}
+            align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
               color: colors[currentTheme].secondary,
             }}
@@ -193,7 +193,7 @@ const MiningPool = () => {
       {(finalStatus === 'Pending' || finalStatus === 'Miner') && (
         <Box style={{ marginTop: 10, marginBottom: -10 }}>Blocks Left: {blocksLeftUntilJoin}</Box>
       )}
-      {(finalStatus === 'Pending' || finalStatus === 'Miner') && blocksLeftUntilJoin == 0 && (
+      {(finalStatus === 'Pending' || finalStatus === 'Miner') && blocksLeftUntilJoin === 0 && (
         <Button
           sx={{ border: 1 }}
           style={{

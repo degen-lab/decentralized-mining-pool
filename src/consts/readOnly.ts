@@ -2,15 +2,15 @@ import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network } from './network';
 import { contractMapping } from './contract';
 import { callReadOnlyFunction, ClarityValue, ListCV, cvToJSON } from '@stacks/transactions';
-import { userSession } from '../components/ConnectWallet';
 import { convertPrincipalToArg, fromResultToList, convertCVToValue } from './converter';
+import { userSession } from '../redux/reducers/user-state';
 
 const contractNetwork =
   network === 'mainnet' ? new StacksMainnet() : network === 'testnet' ? new StacksTestnet() : new StacksMocknet();
 
 const ReadOnlyFunctions = async (function_args: ClarityValue[], contractFunctionName: string) => {
   const userAddress =
-    network == 'mainnet'
+    network === 'mainnet'
       ? userSession.loadUserData().profile.stxAddress.mainnet
       : userSession.isUserSignedIn()
       ? userSession.loadUserData().profile.stxAddress.testnet

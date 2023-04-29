@@ -68,7 +68,7 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
           <TableCell
             key={column.dataKey}
             variant="head"
-            align={column.dataKey == 'address' ? 'left' : 'right'}
+            align={column.dataKey === 'address' ? 'left' : 'right'}
             style={{ width: column.width }}
             sx={{
               backgroundColor: colors[currentTheme].primary,
