@@ -1,7 +1,7 @@
 import { AppConfig } from '@stacks/connect';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
-import colors from '../consts/Colors';
+import colors from '../consts/colorPallete';
 import { useAppDispatch, useAppSelector } from '../redux/store';
 import { connectAction, disconnectAction, updateUserRoleAction } from '../redux/actions';
 import { selectCurrentUserRole, selectUsereSessionState } from '../redux/reducers/user-state';

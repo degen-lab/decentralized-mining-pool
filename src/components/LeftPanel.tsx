@@ -10,10 +10,11 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/icons-material/MenuRounded';
 import MenuOpen from '@mui/icons-material/MenuOpenRounded';
+import HomeIcon from '@mui/icons-material/Home';
 import Hardware from '@mui/icons-material/Hardware';
 import Poll from '@mui/icons-material/Poll';
 import { Link } from 'react-router-dom';
-import colors from '../consts/Colors';
+import colors from '../consts/colorPallete';
 import Home from '@mui/icons-material/Home';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAppSelector } from '../redux/store';
@@ -86,11 +87,27 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
         </ListItem>
       </List>
       <Divider style={{ backgroundColor: colors[currentTheme].accent2 }} />
-      <List
+      <List style={{ backgroundColor: colors[currentTheme].accent2 }}>
+        {/* TODO: keep what fits best, this */}
+        <div style={{ marginTop: -10 }}>
+          <ListItem>
+            <ListItemButton component={Link} to={'/'}>
+              <ListItemIcon>
+                <HomeIcon style={{ color: colors[currentTheme].secondary }} />
+              </ListItemIcon>
+              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Home" />
+            </ListItemButton>
+          </ListItem>
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+        </div>
+        {/* TODO: or this  */}
+        {/* <List
         style={{ backgroundColor: colors[currentTheme].accent2 }}
         component="nav"
         aria-labelledby="nested-list-subheader"
-      >
+      > */}
         <div>
           <ListItem>
             <ListItemButton component={Link} to={'/dashboard'}>

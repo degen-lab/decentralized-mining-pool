@@ -1,9 +1,9 @@
 import { Card, CardHeader, Container, FormControlLabel, Grid, Box } from '@mui/material';
-import DarkModeButton from '../consts/DarkModeButton';
-import ConnectWallet from './ConnectWallet';
-import LeftPanel from './LeftPanel';
-import colors from '../consts/Colors';
-import useCurrentTheme from '../consts/CurrentTheme';
+import DarkModeButton from '../consts/lightModeButton.ts';
+import ConnectWallet from './ConnectWallet.tsx';
+import LeftPanel from './LeftPanel.tsx';
+import colors from '../consts/colorPallete.ts';
+import useCurrentTheme from '../consts/theme.ts';
 
 const HeaderBar = () => {
   const { currentTheme, setTheme } = useCurrentTheme();
@@ -11,7 +11,6 @@ const HeaderBar = () => {
   const changeTheme = () => {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    window.location.reload();
   };
 
   const isButtonChecked = currentTheme === 'light' ? true : false;
