@@ -57,6 +57,9 @@
 (define-map map-block-joined { address: principal } { block-height: uint })
 (define-map map-balance-stx { address: principal } { value: uint })
 (define-map map-balance-xBTC { address: principal } { value: uint })
+(define-map auto-exchange { address: principal } { value: bool })
+(define-map btc-address { address: principal } { btc-address: (string-ascii 40) })
+
 (define-map map-votes-accept-join { address: principal } { value: uint })
 (define-map map-votes-reject-join { address: principal } { value: uint })
 (define-map map-votes-accept-removal { address: principal } { value: uint })
@@ -93,6 +96,9 @@
 (define-data-var max-votes-notifier uint u0)
 (define-data-var max-voted-proposed-notifier principal tx-sender)
 (define-data-var reward uint u0)
+(define-data-var total-rewarded uint u0)
+(define-data-var blocks-won uint u0)
+
 
 (map-set map-is-miner {address: tx-sender} {value: true})
 (map-set map-block-asked-to-join {address: tx-sender} {value: u0})
@@ -282,6 +288,12 @@
 (define-read-only (get-balance (address principal)) 
 (map-get? balance address))
 
+(define-read-only (get-miner-btc-address (miner-address principal))
+  (map-get? btc-address {address: miner-address}))
+
+(define-public (set-my-btc-address (new-btc-address  (string-ascii 40))) 
+  (ok (map-set btc-address {address: tx-sender} {btc-address: new-btc-address})))
+
 ;; deposit funds
 (define-public (deposit-stx (amount uint))
 (let ((sender tx-sender)
@@ -302,6 +314,13 @@
     (map-set map-total-withdraw {address: receiver} {value: amount}))
   (ok (map-set balance receiver (- (unwrap! (map-get? balance receiver) err-missing-balance) amount)))))
 
+;; exchange funds
+(define-public (set-auto-exchange (new-value bool)) 
+  (ok (map-set auto-exchange {address: tx-sender} {value: new-value})))
+
+(define-read-only (get-auto-exchange (address principal)) 
+  (map-get? auto-exchange {address: address}))
+
 (define-public (reward-distribution (block-number uint))
 (begin 
   (asserts! (< block-number block-height) err-block-height-invalid) ;; +100  ? 
@@ -316,6 +335,8 @@
     (map-set claimed-rewards {block-number: block-number} {claimed: true})
     (var-set miners-list-len-at-reward-block (len miners-list-at-reward-block)) 
     (var-set reward (unwrap-panic (get reward block-reward)))
+    (var-set total-rewarded (+ (var-get total-rewarded) (var-get reward)))
+    (var-set blocks-won (+ (var-get blocks-won) u1))
     (map distribute-reward-each-miner miners-list-at-reward-block)
     (ok true))))
 
@@ -324,12 +345,12 @@
 
 ;; JOINING FLOW
 
-;; TODO: when integrated with Bridge ( AlexGo & MagicBridge )
-(define-public (ask-to-join (btc-address principal))
+(define-public (ask-to-join (my-btc-address (string-ascii 40)))
 (begin 
   (asserts! (not (check-is-miner-now tx-sender)) err-already-joined) 
   (asserts! (not (check-is-waiting-now tx-sender)) err-already-asked-to-join) 
   (map-set map-block-asked-to-join {address: tx-sender} {value: block-height})
+  (map-set btc-address {address: tx-sender} {btc-address: my-btc-address})
   (var-set waiting-list (unwrap-panic (as-max-len? (concat (var-get waiting-list) (list tx-sender)) u300)))
   (map-set map-is-waiting {address: tx-sender} {value: true})
   (ok true)))
