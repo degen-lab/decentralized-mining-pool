@@ -231,7 +231,10 @@
 (define-read-only (get-data-notifier-election-process)
 {
   vote-status: (var-get notifier-vote-active), 
-  election-blocks-remaining: (- (var-get notifier-vote-end-block) block-height)})
+  election-blocks-remaining:
+    (if (<= (var-get notifier-vote-end-block) block-height)
+    u0
+    (- (var-get notifier-vote-end-block) block-height))})
 
 (define-read-only (get-all-data-notifier-voter-miners (voter-miners-list (list 100 principal)))
 (map get-data-notifier-voter-miner voter-miners-list))
