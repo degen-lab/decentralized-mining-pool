@@ -927,6 +927,9 @@
 (define-read-only (get-max-votes-notifier) 
 (var-get max-votes-notifier))
 
+(define-read-only (get-current-block)
+(ok block-height))
+
 (define-private (is-principal-in-waiting-list (miner principal))
 (not (is-eq 
   (var-get waiting-list-miner-to-remove)
