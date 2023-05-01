@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { readOnlyGetCurrentBlock, readOnlyGetNotifierElectionProcessData } from "../../../consts/readOnly";
+import colors from '../../../consts/colorPallete';
+import useCurrentTheme from '../../../consts/theme';
+import { Box } from '@mui/material';
 
 const MiningPoolStatus = () => {
   const [currentBlock, setCurrentBlock] = useState<number>()
   const [notifierVoteStatus, setNotifierVoteStatus] = useState<any>()
   const [electionBlocksRemaining, setElectionBlocksRemaining] = useState<any>()
+  const { currentTheme } = useCurrentTheme();
 
   useEffect(() => {
     const getNotifierStatus = async () => {
@@ -24,6 +28,11 @@ const MiningPoolStatus = () => {
   }, [setCurrentBlock]);
 
   return (
+    <Box sx={{ 
+      minHeight: 'calc(100vh - 60px)', 
+      backgroundColor: colors[currentTheme].accent2, 
+      color: colors[currentTheme].secondary,
+      marginTop: -2.5 }}>
     <div>
       <h2>Mining Pool - Status</h2>
       <ul>
@@ -35,6 +44,7 @@ const MiningPoolStatus = () => {
         <li>election remaining blocks: {electionBlocksRemaining}</li>
       </ul>
     </div>
+    </Box>
   );
 };
 

@@ -8,12 +8,16 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import SaveIcon from '@mui/icons-material/Save';
 import { ContractAskToJoin } from '../../../consts/smartContractFunctions';
 import { ReadOnlyGetMinersList, readOnlyGetNotifier } from '../../../consts/readOnly';
+import colors from '../../../consts/colorPallete';
+import useCurrentTheme from '../../../consts/theme';
+import { Box } from '@mui/material';
 
 const Dashboard = () => {
   const [authenticatedSuccessfully, setAuthenticatedSuccessfully] = useState<boolean>(false);
   const [clickedJoinPoolButtonByViewer, setClickedJoinPoolButtonByViewer] = useState<boolean>(false);
   const [currentNotifier, setCurrentNotifier] = useState<string>();
   const [minersList, setMinersList] = useState<any>([]);
+  const { currentTheme } = useCurrentTheme();
   const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
 
   const dispatch = useAppDispatch();
@@ -74,6 +78,11 @@ const Dashboard = () => {
   }, [currentRole]);
 
   return (
+    <Box sx={{ 
+      minHeight: 'calc(100vh - 60px)', 
+      backgroundColor: colors[currentTheme].accent2, 
+      color: colors[currentTheme].secondary,
+      marginTop: -2.5 }}>
     <div>
       <h2>Dashboard</h2>
       <h4>General info about Stacks - widgets/statistics</h4>
@@ -118,6 +127,7 @@ const Dashboard = () => {
         </LoadingButton>
       )}
     </div>
+    </Box>
   );
 };
 
