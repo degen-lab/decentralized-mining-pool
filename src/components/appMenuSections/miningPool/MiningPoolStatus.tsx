@@ -3,15 +3,17 @@ import { readOnlyGetCurrentBlock, readOnlyGetNotifierElectionProcessData } from 
 
 const MiningPoolStatus = () => {
   const [currentBlock, setCurrentBlock] = useState<number>()
-  const [notifierStatus, setNotifierStatus] = useState<any>()
+  const [notifierVoteStatus, setNotifierVoteStatus] = useState<any>()
+  const [electionBlocksRemaining, setElectionBlocksRemaining] = useState<any>()
 
   useEffect(() => {
     const getNotifierStatus = async () => {
       const notifier = await readOnlyGetNotifierElectionProcessData();
-      setNotifierStatus(notifier)
+      setNotifierVoteStatus(notifier['vote-status'].value ? "Vote ongoing!" : "Elections haven't started yet!")
+      setElectionBlocksRemaining(notifier['election-blocks-remaining'].value)
     };
     getNotifierStatus();
-  }, [setNotifierStatus]);
+  }, [setNotifierVoteStatus, setElectionBlocksRemaining],);
   
   useEffect(() => {
     const getCurrentBlock = async () => {
@@ -29,8 +31,8 @@ const MiningPoolStatus = () => {
         <li>current miners</li>
         <li>stacks rewards</li>
         <li>ongoing block: {currentBlock}</li>
-        <li>notifier voting status: {notifierStatus['vote-status'].value ? "Vote ongoing!" : "Elections haven't started yet!"}</li>
-        <li>election remaining blocks: {notifierStatus['election-blocks-remaining'].value}</li>
+        <li>notifier voting status: {notifierVoteStatus}</li>
+        <li>election remaining blocks: {electionBlocksRemaining}</li>
       </ul>
     </div>
   );
