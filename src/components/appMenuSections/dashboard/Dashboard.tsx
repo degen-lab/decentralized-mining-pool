@@ -6,10 +6,14 @@ import { selectCurrentUserRole, UserRole } from '../../../redux/reducers/user-st
 import { useAppDispatch, useAppSelector } from '../../../redux/store';
 import LoadingButton from '@mui/lab/LoadingButton';
 import SaveIcon from '@mui/icons-material/Save';
+import { ContractAskToJoin } from '../../../consts/smartContractFunctions';
+import { ReadOnlyGetMinersList, readOnlyGetNotifier } from '../../../consts/readOnly';
 
 const Dashboard = () => {
   const [authenticatedSuccessfully, setAuthenticatedSuccessfully] = useState<boolean>(false);
   const [clickedJoinPoolButtonByViewer, setClickedJoinPoolButtonByViewer] = useState<boolean>(false);
+  const [currentNotifier, setCurrentNotifier] = useState<string>();
+  const [minersList, setMinersList] = useState<any>([]);
   const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
 
   const dispatch = useAppDispatch();
@@ -38,6 +42,27 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    const getCurrentNotifier = async () => {
+      const notifier = await readOnlyGetNotifier();
+      setCurrentNotifier(notifier);
+    };
+
+    getCurrentNotifier();
+  }, [setCurrentNotifier]);
+
+  useEffect(() => {
+    const getMinersList = async () => {
+      const { value } = await ReadOnlyGetMinersList();
+      // console.log('current', value);
+      const parsedMinersList = value.map((miner: any) => miner.value);
+      // console.log('parsed', parsedMinersList);
+      setMinersList(parsedMinersList);
+    };
+
+    getMinersList();
+  }, [setMinersList]);
+
+  useEffect(() => {
     if (currentRole === 'Viewer') {
       setAuthenticatedSuccessfully(false);
     } else {
@@ -59,8 +84,15 @@ const Dashboard = () => {
       </ul>
       <h4>General info about mining pool</h4>
       <ul>
-        <li>notifier</li>
-        <li>list of miners</li>
+        <li>
+          notifier: <div>{currentNotifier}</div>
+        </li>
+        <li>
+          list of miners:
+          {minersList.map((data: string) => (
+            <div>{data}</div>
+          ))}
+        </li>
         <li>winner block id</li>
         <li>number of blocks won</li>
         <li>stacks rewards</li>
@@ -71,7 +103,8 @@ const Dashboard = () => {
           onClick={() => {
             if (currentRole === 'Viewer') {
               handleJoinPoolButtonByViewer();
-            } else if (currentRole === 'NormalUser') {
+            } else if (currentRole === 'NormalUser' || 'Miner') {
+              ContractAskToJoin('ST2ST2H80NP5C9SPR4ENJ1Z9CDM9PKAJVPYWPQZ50');
               handleJoinPoolButtonByNormalUser();
             }
           }}
