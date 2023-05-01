@@ -12,7 +12,6 @@ const MinerProfile = () => {
 
       const balance = await readOnlyGetBalance(principalAddress);
       setCurrentBalance(balance);
-      console.log('balance', balance);
     };
 
     getUserBalance();
