@@ -163,10 +163,8 @@ export const readOnlyGetRemainingBlocksJoin = async () => {
 // what does it do: returns notifier voting status and the blocks remaining until the end
 // return: vote status of the notifier, election blocks remaining
 export const readOnlyGetNotifierElectionProcessData = async () => {
-  const test = await ReadOnlyFunctions([], 'get-data-notifier-election-process');
-
-  console.log('TEST', test);
-  return test;
+  const notifierData = await ReadOnlyFunctions([], 'get-data-notifier-election-process');
+  return cvToJSON(notifierData).value;
 };
 
 // get-all-data-notifier-voter-miners
@@ -296,4 +294,13 @@ export const readOnlyGetMaxVotesNotifier = async () => {
 export const readOnlyGetNotifierVoteStatus = async () => {
   const test = await ReadOnlyFunctions([], 'get-notifier-vote-status');
   console.log('TEST', test);
+};
+
+// get-current-block
+// args: none
+// what does it do: get the current block height of the Stacks blockchain
+// returns: current block
+export const readOnlyGetCurrentBlock = async () => {
+  const currentBlock = await ReadOnlyFunctions([], 'get-current-block');
+  return cvToJSON(currentBlock).value.value
 };

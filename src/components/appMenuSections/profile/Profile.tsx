@@ -10,14 +10,6 @@ import WaitingMinerProfile from './WaitingMinerProfile';
 const Profile = () => {
   const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
 
-  useEffect(() => {
-    const testFunction = async () => {
-      const test = await readOnlyGetNotifierElectionProcessData();
-      console.log('notifier test', test);
-    };
-    testFunction();
-  }, []);
-
   const profileMapping: Record<UserRole, React.ReactElement> = {
     Viewer: <CommonInfoProfile />,
     NormalUser: <CommonInfoProfile />,
