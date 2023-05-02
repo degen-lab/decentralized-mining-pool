@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { readOnlyGetBalance, readOnlyGetNotifierElectionProcessData } from '../../../consts/readOnly';
-import { selectCurrentUserRole, UserRole, userSession } from '../../../redux/reducers/user-state';
+import { selectCurrentUserRole, selectUserSessionState, UserRole } from '../../../redux/reducers/user-state';
 import { useAppSelector } from '../../../redux/store';
 import CommonInfoProfile from './CommonInfoProfile';
 import MinerProfile from './MinerProfile';
@@ -13,25 +13,29 @@ import { Box } from '@mui/material';
 const Profile = () => {
   const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
   const { currentTheme } = useCurrentTheme();
+  const userSession = useAppSelector(selectUserSessionState);
 
   const profileMapping: Record<UserRole, React.ReactElement> = {
     Viewer: <CommonInfoProfile />,
     NormalUser: <CommonInfoProfile />,
-    WaitingMiner: <WaitingMinerProfile />,
-    PendingMiner: <PendingMinerProfile />,
+    Waiting: <WaitingMinerProfile />,
+    Pending: <PendingMinerProfile />,
     Miner: <MinerProfile />,
   };
 
   return (
-    <Box sx={{ 
-      minHeight: 'calc(100vh - 60px)', 
-      backgroundColor: colors[currentTheme].accent2, 
-      color: colors[currentTheme].secondary,
-      marginTop: -2.5 }}>
-    <div>
-      <h2>Profile</h2>
-      {profileMapping[currentRole]}
-    </div>
+    <Box
+      sx={{
+        minHeight: 'calc(100vh - 60px)',
+        backgroundColor: colors[currentTheme].accent2,
+        color: colors[currentTheme].secondary,
+        marginTop: -2.5,
+      }}
+    >
+      <div>
+        <h2>Profile</h2>
+        {profileMapping[currentRole]}
+      </div>
     </Box>
   );
 };

@@ -3,22 +3,24 @@ import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
 import useCurrentTheme from '../../../consts/theme';
 import colors from '../../../consts/colorPallete';
-import {
-  ContractProposeRemoval,
-} from '../../../consts/smartContractFunctions';
+import { ContractProposeRemoval } from '../../../consts/smartContractFunctions';
 import Button from '@mui/material/Button';
 import TableCreation from '../../../components/TableCreation';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
-import {
-  GetMinersRows,
-  minerColumns,
-  MinersData,
-} from '../../../consts/tableData';
+import { GetMinersRows, minerColumns, MinersData } from '../../../consts/tableData';
+
+import { readOnlyAddressStatus } from '../../../consts/readOnly';
+import { useState, useEffect } from 'react';
+import { updateUserRoleAction } from '../../../redux/actions';
+import { useAppSelector } from '../../../redux/store';
+import { selectUserSessionState } from '../../../redux/reducers/user-state';
 
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
+  const [finalStatus, setFinalStatus] = useState<string>('');
+  const userSession = useAppSelector(selectUserSessionState);
   // will add later, after read_length too big is solved
   // const removalRows = GetRemovalsRows();
 
@@ -31,6 +33,17 @@ const MiningPool = () => {
   //   };
   //   fetchStatus();
   // }, [setFinalStatus]);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      const args = userSession.loadUserData().profile.stxAddress.testnet;
+      const status = await readOnlyAddressStatus(args);
+      setFinalStatus(status);
+      if (finalStatus !== null) updateUserRoleAction(finalStatus);
+      console.log('status', finalStatus);
+    };
+    fetchStatus();
+  }, [finalStatus]);
 
   const handleMinerRemoveButtonClick = (address: string) => {
     ContractProposeRemoval(address);
@@ -56,10 +69,7 @@ const MiningPool = () => {
             {column.dataKey === 'proposeRemoval' ? (
               <Box>
                 <Button sx={{ marginRight: 3 }} onClick={() => handleMinerRemoveButtonClick(minersRow['address'])}>
-                  <PersonRemoveIcon
-                    fontSize="small"
-                    sx={{ color: 'red' }}
-                  />
+                  <PersonRemoveIcon fontSize="small" sx={{ color: 'red' }} />
                 </Button>
               </Box>
             ) : (
@@ -68,10 +78,7 @@ const MiningPool = () => {
             {column.dataKey === 'generalInfo' ? (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(minersRow['address'])}>
-                  <InfoIcon
-                    fontSize="small"
-                    sx={{ color: colors[currentTheme].secondary }}
-                  />
+                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
                 </Button>
               </Box>
             ) : (

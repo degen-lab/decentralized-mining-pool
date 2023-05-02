@@ -34,13 +34,13 @@ const ReadOnlyFunctions = async (function_args: ClarityValue[], contractFunction
 // return: 'Miner', 'Waiting', 'Pending', or 'Not Asked to Join'
 
 export const readOnlyAddressStatus = async (args: string) => {
-  const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no';
+  // const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no';
   const statusArgs = convertPrincipalToArg(args);
 
-  const status =
-    isUserLogged === 'yes'
-      ? await ReadOnlyFunctions([statusArgs], 'get-address-status')
-      : { value: { data: 'is-none' } };
+  const status = await ReadOnlyFunctions([statusArgs], 'get-address-status');
+  // isUserLogged === 'yes'
+  //   ? await ReadOnlyFunctions([statusArgs], 'get-address-status')
+  //   : { value: { data: 'is-none' } };
 
   const statusInfo = (status as any).value.data;
   return statusInfo === 'is-miner'
@@ -49,7 +49,7 @@ export const readOnlyAddressStatus = async (args: string) => {
     ? 'Waiting'
     : statusInfo === 'is-pending'
     ? 'Pending'
-    : 'Not Asked to Join';
+    : 'NormalUser';
 };
 
 // get-all-data-waiting-miners
@@ -301,5 +301,5 @@ export const readOnlyGetNotifierVoteStatus = async () => {
 // returns: current block
 export const readOnlyGetCurrentBlock = async () => {
   const currentBlock = await ReadOnlyFunctions([], 'get-current-block');
-  return cvToJSON(currentBlock).value.value
+  return cvToJSON(currentBlock).value.value;
 };
