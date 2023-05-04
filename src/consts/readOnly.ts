@@ -133,11 +133,7 @@ export const readOnlyGetAllDataMinersPendingAccept = async () => {
       newResultList.push(cvToJSON(newResult));
     }
   }
-  console.log('TEST', newResultList);
   return newResultList;
-
-  // const test = await ReadOnlyFunctions([], 'get-all-data-miners-pending-accept');
-  // console.log('TEST', test);
 };
 
 // get-all-data-miners-in-pool
@@ -273,8 +269,9 @@ export const readOnlyGetNotifierVoteNumber = async (votedNotifierPrincipal: any)
 // what does it do: get the notifier with the most votes
 // return: address
 export const readOnlyGetNotifierMaxVoted = async () => {
-  const test = await ReadOnlyFunctions([], 'get-max-voted-notifier');
-  console.log('TEST', test);
+  const mostVotedNotifierAddress = await ReadOnlyFunctions([], 'get-max-voted-notifier');
+  console.log('TEST most voted notifier address', mostVotedNotifierAddress);
+  return mostVotedNotifierAddress;
 };
 
 // get-max-votes-notifier
@@ -282,8 +279,9 @@ export const readOnlyGetNotifierMaxVoted = async () => {
 // what does it do: get the votes of the most voted notifier
 // return: votes, number
 export const readOnlyGetMaxVotesNotifier = async () => {
-  const test = await ReadOnlyFunctions([], 'get-max-votes-notifier');
-  console.log('TEST', test);
+  const maxVotesNotifier = await ReadOnlyFunctions([], 'get-max-votes-notifier');
+  console.log('TEST max votes for notifier - returning votes and number', maxVotesNotifier);
+  return maxVotesNotifier;
 };
 
 // get-notifier-vote-status
@@ -291,8 +289,9 @@ export const readOnlyGetMaxVotesNotifier = async () => {
 // what does it do: get if the notifier election process has started
 // return: false or true, boolean
 export const readOnlyGetNotifierVoteStatus = async () => {
-  const test = await ReadOnlyFunctions([], 'get-notifier-vote-status');
-  console.log('TEST', test);
+  const notifierVoteStatus = await ReadOnlyFunctions([], 'get-notifier-vote-status');
+  console.log('TEST - get notifier vote status', notifierVoteStatus);
+  return notifierVoteStatus;
 };
 
 // get-current-block
@@ -302,4 +301,16 @@ export const readOnlyGetNotifierVoteStatus = async () => {
 export const readOnlyGetCurrentBlock = async () => {
   const currentBlock = await ReadOnlyFunctions([], 'get-current-block');
   return cvToJSON(currentBlock).value.value;
+};
+
+//exchange toggle for miners
+
+export const readOnlyExchangeToggle = async (args: string) => {
+  // const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no';
+  const exchangeArgs = convertPrincipalToArg(args);
+
+  const exchange = await ReadOnlyFunctions([exchangeArgs], 'get-auto-exchange');
+  console.log('exchange', cvToJSON(exchange));
+
+  // return exchange;
 };

@@ -2,13 +2,13 @@ import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network, transactionUrl } from './network';
 import { contractMapping } from './contract';
 import { openContractCall, FinishedTxData } from '@stacks/connect';
-import { AnchorMode, PostConditionMode, ClarityValue, stringCV } from '@stacks/transactions';
-import { convertPrincipalToArg } from './converter';
+import { AnchorMode, PostConditionMode, ClarityValue, stringCV, uintCV } from '@stacks/transactions';
+import { convertPrincipalToArg, convertStringToArg } from './converter';
 
 const contractNetwork =
   network === 'mainnet' ? new StacksMainnet() : network === 'testnet' ? new StacksTestnet() : new StacksMocknet();
 
-const CallFunctions = (function_args: ClarityValue[], contractFunctionName: string) => {
+const CallFunctions = (function_args: ClarityValue[], contractFunctionName: string, post_condition_args: any) => {
   const options = {
     network: contractNetwork,
     anchorMode: AnchorMode.Any,
@@ -17,7 +17,7 @@ const CallFunctions = (function_args: ClarityValue[], contractFunctionName: stri
     functionName: contractFunctionName,
     functionArgs: function_args,
     postConditionMode: PostConditionMode.Deny,
-    postConditions: [],
+    postConditions: [post_condition_args],
     onFinish: (data: FinishedTxData) => {
       console.log(transactionUrl[network](data.txId).explorerUrl);
       console.log(transactionUrl[network](data.txId).apiUrl);
@@ -36,7 +36,7 @@ const CallFunctions = (function_args: ClarityValue[], contractFunctionName: stri
 
 export const ContractVotePositiveJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'vote-positive-join-request');
+  CallFunctions(convertedArgs, 'vote-positive-join-request', []);
 };
 
 // vote-negative-join-request
@@ -46,7 +46,7 @@ export const ContractVotePositiveJoin = (args: string) => {
 
 export const ContractVoteNegativeJoin = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'vote-negative-join-request');
+  CallFunctions(convertedArgs, 'vote-negative-join-request', []);
 };
 
 // try-enter-pool
@@ -55,7 +55,7 @@ export const ContractVoteNegativeJoin = (args: string) => {
 //                  (the user needs to pass the positive votes threshold)
 
 export const ContractTryEnterPool = () => {
-  CallFunctions([], 'try-enter-pool');
+  CallFunctions([], 'try-enter-pool', []);
 };
 
 // ask-to-join
@@ -64,21 +64,26 @@ export const ContractTryEnterPool = () => {
 
 export const ContractAskToJoin = (args: string) => {
   const convertedArgs = [stringCV(args, 'ascii')];
-  CallFunctions(convertedArgs, 'ask-to-join');
+  CallFunctions(convertedArgs, 'ask-to-join', []);
 };
 
 // deposit-stx
 // args: (amount uint)
 // what does it do: deposits stx into user's account
 
-export const ContractDepositSTX = (amount: any) => {
+export const ContractDepositSTX = (amount: number) => {
+  const convertedArgs = [uintCV(amount)];
   // const
-  CallFunctions(amount, 'deposit-stx');
+  CallFunctions(convertedArgs, 'deposit-stx', []);
 };
 //
 // withdraw-stx
 // args: (amount uint)
 // what does it do: withdraws stx from user's account
+export const ContractWithdrawSTX = (amount: number) => {
+  const convertedArgs = [uintCV(amount)];
+  CallFunctions(convertedArgs, 'withdraw-stx', []);
+};
 //
 // reward-distribution
 // args: (block-number uint)
@@ -89,20 +94,24 @@ export const ContractDepositSTX = (amount: any) => {
 // what does it do: It adds all the pending miners from pending list to pool
 
 export const ContractAddPending = () => {
-  CallFunctions([], 'add-pending-miners-to-pool');
+  CallFunctions([], 'add-pending-miners-to-pool', []);
 };
 
 // leave-pool
 // args: none
 // what does it do: makes the user leave the mining pool
 //
+export const ContractLeavePool = () => {
+  CallFunctions([], 'leave-pool', []);
+};
+
 // propose-removal
 // args: (miner-to-remove principal)
 // what does it do: propose a miner to be removed from the pool
 
 export const ContractProposeRemoval = (args: string) => {
   const convertedArgs = [convertPrincipalToArg(args)];
-  CallFunctions(convertedArgs, 'propose-removal');
+  CallFunctions(convertedArgs, 'propose-removal', []);
 };
 
 // vote-positive-remove-request
@@ -128,3 +137,18 @@ export const ContractProposeRemoval = (args: string) => {
 // warn-miner
 // args: (miner principal)
 // what does it do: warns the user passed as argument
+
+//change btx address
+//set-my-btc-address
+export const ContractChangeBtcAddress = (args: string) => {
+  const convertedArgs = [convertStringToArg(args)];
+  CallFunctions(convertedArgs, 'set-my-btc-address', []);
+};
+
+//claim-rewards-for-block
+//reward-distribution
+export const ContractClaimRewardsForBlock = (amount: number) => {
+  const convertedArgs = [uintCV(amount)];
+  // const
+  CallFunctions(convertedArgs, 'reward-distribution', []);
+};
