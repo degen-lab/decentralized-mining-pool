@@ -15,11 +15,11 @@ import { Box } from '@mui/material';
 const Dashboard = () => {
   const [authenticatedSuccessfully, setAuthenticatedSuccessfully] = useState<boolean>(false);
   const [clickedJoinPoolButtonByViewer, setClickedJoinPoolButtonByViewer] = useState<boolean>(false);
-  const [currentNotifier, setCurrentNotifier] = useState<string>();
+  const [currentNotifier, setCurrentNotifier] = useState<string>('');
   const [minersList, setMinersList] = useState<any>([]);
   const { currentTheme } = useCurrentTheme();
   const currentRole: UserRole = useAppSelector(selectCurrentUserRole);
-  const [userAddress, setUserAddress] = useState<number | null>(null);
+  const [userAddress, setUserAddress] = useState<string | null>(null);
   const userSession = useAppSelector(selectUserSessionState);
 
   const dispatch = useAppDispatch();

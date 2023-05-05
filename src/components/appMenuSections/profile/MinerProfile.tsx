@@ -13,6 +13,7 @@ import useCurrentTheme from '../../../consts/theme';
 import { Alert, Box, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../redux/store';
 import {
+  ContractChangeBtcAddress,
   ContractClaimRewardsForBlock,
   ContractDepositSTX,
   ContractLeavePool,
@@ -33,11 +34,19 @@ const MinerProfile = () => {
   const [leavePoolButtonClicked, setLeavePoolButtonClicked] = useState<boolean>(false);
   const [disableLeavePoolButton, setDisableLeavePoolButton] = useState<boolean>(false);
   const [claimRewardsInputAmount, setClaimRewardsInputAmount] = useState<number | null>(null);
+  const [btcAddress, setBtcAddress] = useState<string | ''>('');
   const userSession = useAppSelector(selectUserSessionState);
   const dispatch = useAppDispatch();
 
   const userAddress = userSession.loadUserData().profile.stxAddress.testnet;
   console.log('user address', userAddress);
+
+  const changeBtcAddress = () => {
+    if (btcAddress !== '') {
+      ContractChangeBtcAddress(btcAddress);
+      setBtcAddress('');
+    }
+  };
 
   const claimRewards = () => {
     if (claimRewardsInputAmount !== null) {
@@ -143,7 +152,15 @@ const MinerProfile = () => {
           <li>
             change btc address
             <div>
-              <TextField id="outlined-basic" label="btc-address" variant="outlined" />
+              <TextField
+                id="outlined-basic"
+                label="btc-address"
+                variant="outlined"
+                onChange={(e) => setBtcAddress(e.target.value)}
+              />
+            </div>
+            <div>
+              <button onClick={changeBtcAddress}>change btc address</button>
             </div>
           </li>
 
