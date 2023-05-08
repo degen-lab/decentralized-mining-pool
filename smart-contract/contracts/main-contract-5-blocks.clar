@@ -939,7 +939,7 @@
 (define-read-only (get-blocks-won) 
 (var-get blocks-won))
 
-(define-read-only (get-total-rewards-distibuted) 
+(define-read-only (get-total-rewards-distributed) 
 (var-get total-rewarded))
 
 (define-read-only (get-waiting-list) 
