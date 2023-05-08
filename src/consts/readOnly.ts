@@ -57,9 +57,8 @@ export const readOnlyAddressStatus = async (args: string) => {
 // what does it do: it returns the details for every miner in the waiting list passed as argument
 // return: address, positive votes and threshold, negative votes and threshold, was blacklisted
 
-export const ReadOnlyAllDataWaitingMiners = async () => {
+export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue) => {
   const newResultList: ClarityValue[] = [];
-  const fullWaitingList: ClarityValue = await ReadOnlyGetWaitingList();
   const step = 1;
 
   for (

@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ReadOnlyAllDataProposedRemovalMiners, ReadOnlyAllDataWaitingMiners, ReadOnlyGetMinersList } from './readOnly';
+import {
+  ReadOnlyAllDataProposedRemovalMiners,
+  ReadOnlyAllDataWaitingMiners,
+  ReadOnlyGetMinersList,
+  ReadOnlyGetWaitingList,
+} from './readOnly';
 
 // data interface for all tables, used as type in TableCreation
 
@@ -93,7 +98,8 @@ export const GetWaitingRows = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const newWaitingList = await ReadOnlyAllDataWaitingMiners();
+      const fullWaitingList = await ReadOnlyGetWaitingList();
+      const newWaitingList = await ReadOnlyAllDataWaitingMiners(fullWaitingList);
       setWaitingList(newWaitingList);
     };
     fetchData();

@@ -5,6 +5,7 @@ import { useAppSelector } from '../../../redux/store';
 import { selectCurrentUserRole } from '../../../redux/reducers/user-state';
 import { useEffect, useState } from 'react';
 import { readOnlyGetRemainingBlocksJoin } from '../../../consts/readOnly';
+import { ContractAddPending } from '../../../consts/smartContractFunctions';
 
 const PendingMinerProfile = () => {
   const { currentTheme } = useCurrentTheme();
@@ -41,7 +42,9 @@ const PendingMinerProfile = () => {
             <button
               disabled={blocksLeftUntilJoin === 0 && currentRole === 'Pending' ? false : true}
               className="minerProfileButtons"
-              onClick={() => {}}
+              onClick={() => {
+                ContractAddPending();
+              }}
             >
               join pool from pending to miners
             </button>
