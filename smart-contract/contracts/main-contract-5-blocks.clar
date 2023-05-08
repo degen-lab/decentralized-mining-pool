@@ -936,6 +936,9 @@
 (define-read-only (get-notifier) 
 (var-get notifier))
 
+(define-read-only (get-blocks-won) 
+(var-get blocks-won))
+
 (define-read-only (get-waiting-list) 
 (var-get waiting-list))
 
