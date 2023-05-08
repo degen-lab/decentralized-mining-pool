@@ -43,7 +43,7 @@ const PendingMinerProfile = () => {
               className="minerProfileButtons"
               onClick={() => {}}
             >
-              Join pool
+              join pool from pending to miners
             </button>
           </li>
         </ul>

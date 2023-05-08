@@ -316,3 +316,17 @@ export const readOnlyExchangeToggle = async (args: string) => {
 
   // return exchange;
 };
+
+//number of blocks won
+//get-blocks-won
+export const readOnlyGetBlocksWon = async () => {
+  const wonBlocks = await ReadOnlyFunctions([], 'get-blocks-won');
+  return cvToJSON(wonBlocks).value;
+};
+
+//stacks rewards
+//get-total-rewards-distributed
+export const readOnlyGetStacksRewards = async () => {
+  const stacksRewards = await ReadOnlyFunctions([], 'get-total-rewards-distributed');
+  return cvToJSON(stacksRewards).value;
+};

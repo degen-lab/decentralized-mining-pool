@@ -17,7 +17,7 @@ const CallFunctions = (function_args: ClarityValue[], contractFunctionName: stri
     functionName: contractFunctionName,
     functionArgs: function_args,
     postConditionMode: PostConditionMode.Deny,
-    postConditions: [post_condition_args],
+    postConditions: post_condition_args,
     onFinish: (data: FinishedTxData) => {
       console.log(transactionUrl[network](data.txId).explorerUrl);
       console.log(transactionUrl[network](data.txId).apiUrl);
@@ -138,7 +138,7 @@ export const ContractProposeRemoval = (args: string) => {
 // args: (miner principal)
 // what does it do: warns the user passed as argument
 
-//change btx address
+//change btc address
 //set-my-btc-address
 export const ContractChangeBtcAddress = (args: string) => {
   const convertedArgs = [convertStringToArg(args)];
