@@ -232,6 +232,18 @@
       total-withdrawals: (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) u0)
     })))
 
+;; total withdrawals
+
+(define-read-only (get-all-data-total-withdrawals (local-miners-list (list 100 principal))) 
+(map get-data-miner-withdrawals local-miners-list))
+
+(define-private (get-data-miner-withdrawals (miner principal)) 
+(begin 
+  (asserts! (is-some (get value (map-get? map-is-miner {address: miner}))) err-not-in-miner-map)
+  (ok 
+      (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) u0)
+    )))
+
 ;; notifier
 
 (define-read-only (get-data-notifier-election-process)
