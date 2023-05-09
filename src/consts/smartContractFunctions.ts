@@ -117,11 +117,21 @@ export const ContractProposeRemoval = (args: string) => {
 // vote-positive-remove-request
 // args: (miner-to-vote principal)
 // what does it do: add 1 to the positive votes to remove the user passed as argument
-//
+
+export const ContractVotePositiveRemove = (args: string) => {
+  const convertedArgs = [convertPrincipalToArg(args)];
+  CallFunctions(convertedArgs, 'vote-positive-remove-request', []);
+};
+
 // vote-negative-remove-request
 // args: (miner-to-vote principal)
 // what does it do: add 1 to the negative votes to remove the user passed as argument
-//
+
+export const ContractVoteNegativeRemove = (args: string) => {
+  const convertedArgs = [convertPrincipalToArg(args)];
+  CallFunctions(convertedArgs, 'vote-negative-remove-request', []);
+};
+
 // start-vote-notifier
 // args: none
 // what does it do: starts the vote to elect a notifier
