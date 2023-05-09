@@ -135,6 +135,10 @@ export const ContractVoteNegativeRemove = (args: string) => {
 // start-vote-notifier
 // args: none
 // what does it do: starts the vote to elect a notifier
+export const ContractStartVoteNotifier = () => {
+  CallFunctions([], 'start-vote-notifier', []);
+};
+
 //
 // end-vote-notifier
 // args: none
