@@ -166,9 +166,9 @@ export const readOnlyGetNotifierElectionProcessData = async () => {
 // args: (voter-miners-list (list 100 principal))
 // what does it do: returns the miner and which notifier it voted for each miner
 // return: address, notifier which the users in arg list voted for
-export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: any) => {
-  const test = await ReadOnlyFunctions([], 'get-all-data-notifier-voter-miners');
-  console.log('TEST', test);
+export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: ClarityValue) => {
+  const votedNotifier = await ReadOnlyFunctions([voterMinersList], 'get-all-data-notifier-voter-miners');
+  return cvToJSON(votedNotifier).value[0].value.value;
 };
 
 // was-block-claimed

@@ -6,7 +6,7 @@ import { selectCurrentUserRole, selectUserSessionState } from '../../../redux/re
 import { ContractTryEnterPool } from '../../../consts/smartContractFunctions';
 import { ReadOnlyAllDataWaitingMiners } from '../../../consts/readOnly';
 import { useState, useEffect } from 'react';
-import { principalCV, ClarityValue, listCV } from '@stacks/transactions';
+import { principalCV, ClarityValue, listCV, cvToJSON } from '@stacks/transactions';
 
 const WaitingMinerProfile = () => {
   const { currentTheme } = useCurrentTheme();

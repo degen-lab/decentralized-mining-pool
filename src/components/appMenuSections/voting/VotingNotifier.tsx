@@ -10,6 +10,7 @@ import {
 import { useAppSelector } from '../../../redux/store';
 import { selectUserSessionState } from '../../../redux/reducers/user-state';
 import { ContractStartVoteNotifier } from '../../../consts/smartContractFunctions';
+import { principalCV, ClarityValue, listCV } from '@stacks/transactions';
 
 const VotingNotifier = () => {
   const { currentTheme } = useCurrentTheme();
@@ -17,6 +18,7 @@ const VotingNotifier = () => {
   const [electionBlocksRemaining, setElectionBlocksRemaining] = useState<number | null>(null);
   const [currentNotifier, setCurrentNotifier] = useState<string | null>(null);
   const [notifierVoteStatus, setNotifierVoteStatus] = useState<any>(null);
+  const [votedNotifier, setVotedNotifier] = useState<any>(null);
   const userSession = useAppSelector(selectUserSessionState);
 
   useEffect(() => {
@@ -41,13 +43,19 @@ const VotingNotifier = () => {
 
   useEffect(() => {
     const args = userSession.loadUserData().profile.stxAddress.testnet;
-    console.log('address', args);
     setUserAddress(args);
   }, [userAddress]);
 
   useEffect(() => {
-    if (userAddress !== null) readOnlyGetAllDataNotifierVoterMiners(userAddress);
-  }, [userAddress]);
+    const getVotedNotifier = async () => {
+      if (userAddress !== null) {
+        const voteResult = await readOnlyGetAllDataNotifierVoterMiners(listCV([principalCV(userAddress)]));
+
+        setVotedNotifier(voteResult);
+      }
+    };
+    getVotedNotifier();
+  }, [votedNotifier, userAddress]);
   return (
     <Box
       sx={{
@@ -60,7 +68,10 @@ const VotingNotifier = () => {
       <div>
         <h2>Voting - Notifier</h2>
         <ul>
-          <li>who I voted for</li>
+          <li>
+            who I voted for:{' '}
+            {votedNotifier !== null ? (votedNotifier === '133' ? "you haven't voted yet" : votedNotifier) : ''}
+          </li>
           <li>number of blocks remaining to vote: {electionBlocksRemaining !== null && electionBlocksRemaining}</li>
           <li>
             the elected notifier if the vote ended:{' '}

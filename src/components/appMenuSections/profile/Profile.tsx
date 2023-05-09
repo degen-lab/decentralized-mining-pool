@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { readOnlyGetBalance, readOnlyGetNotifierElectionProcessData } from '../../../consts/readOnly';
 import { selectCurrentUserRole, selectUserSessionState, UserRole } from '../../../redux/reducers/user-state';
 import { useAppSelector } from '../../../redux/store';
 import CommonInfoProfile from './CommonInfoProfile';
