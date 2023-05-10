@@ -19,7 +19,7 @@ import { selectUserSessionState } from '../../../redux/reducers/user-state';
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
-  const [finalStatus, setFinalStatus] = useState<string>('');
+  const [finalStatus, setFinalStatus] = useState<string | null>(null);
   const userSession = useAppSelector(selectUserSessionState);
   // will add later, after read_length too big is solved
   // const removalRows = GetRemovalsRows();
@@ -32,7 +32,7 @@ const MiningPool = () => {
   //     setFinalStatus(status);
   //   };
   //   fetchStatus();
-  // }, [setFinalStatus]);
+  // }, [finalStatus]);
 
   useEffect(() => {
     const fetchStatus = async () => {

@@ -1,4 +1,3 @@
-import { current } from '@reduxjs/toolkit';
 import colors from '../../../consts/colorPallete';
 import { readOnlyGetNotifier, readOnlyGetNotifierElectionProcessData } from '../../../consts/readOnly';
 import { ContractEndVoteNotifier } from '../../../consts/smartContractFunctions';

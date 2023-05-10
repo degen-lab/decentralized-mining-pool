@@ -10,7 +10,7 @@ import {
 import { useAppSelector } from '../../../redux/store';
 import { selectUserSessionState } from '../../../redux/reducers/user-state';
 import { ContractStartVoteNotifier } from '../../../consts/smartContractFunctions';
-import { principalCV, ClarityValue, listCV } from '@stacks/transactions';
+import { principalCV, listCV } from '@stacks/transactions';
 
 const VotingNotifier = () => {
   const { currentTheme } = useCurrentTheme();

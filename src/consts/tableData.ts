@@ -89,7 +89,7 @@ export const GetWaitingRows = () => {
       setWaitingList(newWaitingList);
     };
     fetchData();
-  }, [setWaitingList]);
+  }, [waitingList]);
 
   const rows =
     waitingList.length !== 0
@@ -157,7 +157,7 @@ export const GetMinersRows = () => {
       setMinersList(newMinersList.value);
     };
     fetchData();
-  }, [setMinersList]);
+  }, [minersList]);
 
   const rows =
     minersList.length !== 0
@@ -247,7 +247,7 @@ export const GetRemovalsRows = () => {
       setRemovalsList(newRemovalsList);
     };
     fetchData();
-  }, [setRemovalsList]);
+  }, [removalsList]);
 
   const rows =
     removalsList.length !== 0

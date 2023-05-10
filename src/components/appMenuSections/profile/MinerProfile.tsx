@@ -10,7 +10,7 @@ import { selectCurrentUserRole, selectUserSessionState } from '../../../redux/re
 import '../style.css';
 import colors from '../../../consts/colorPallete';
 import useCurrentTheme from '../../../consts/theme';
-import { Alert, Box, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { Alert, Box, TextField } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../redux/store';
 import {
   ContractChangeBtcAddress,
@@ -21,7 +21,6 @@ import {
   ContractSetAutoExchange,
 } from '../../../consts/smartContractFunctions';
 import { updateUserRoleAction } from '../../../redux/actions';
-import { SelectChangeEvent } from '@mui/material/Select';
 
 const MinerProfile = () => {
   const [currentBalance, setCurrentBalance] = useState<number>(0);
@@ -36,7 +35,7 @@ const MinerProfile = () => {
   const [disableLeavePoolButton, setDisableLeavePoolButton] = useState<boolean>(false);
   const [claimRewardsInputAmount, setClaimRewardsInputAmount] = useState<number | null>(null);
   const [totalWithdrawals, setTotalWithdrawals] = useState<number | null>(null);
-  const [btcAddress, setBtcAddress] = useState<string | ''>('');
+  const [btcAddress, setBtcAddress] = useState<string>('');
   const userSession = useAppSelector(selectUserSessionState);
   const dispatch = useAppDispatch();
 

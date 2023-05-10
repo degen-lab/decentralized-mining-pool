@@ -3,11 +3,7 @@ import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
 import useCurrentTheme from '../../../consts/theme';
 import colors from '../../../consts/colorPallete';
-import {
-  ContractVotePositiveJoin,
-  ContractVoteNegativeJoin,
-  ContractTryEnterPool,
-} from '../../../consts/smartContractFunctions';
+import { ContractVotePositiveJoin, ContractVoteNegativeJoin } from '../../../consts/smartContractFunctions';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import Button from '@mui/material/Button';
