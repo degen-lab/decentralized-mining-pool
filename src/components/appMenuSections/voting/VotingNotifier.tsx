@@ -62,6 +62,7 @@ const VotingNotifier = () => {
               <Box>
                 <Button
                   style={{ marginRight: -18 }}
+                  disabled={votedNotifier !== "you haven't voted yet"}
                   onClick={() => handlePendingVoteButtonClick(notifiersRow['address'])}
                 >
                   <ThumbUpAltIcon fontSize="small" sx={{ color: 'green' }} />
@@ -170,7 +171,7 @@ const VotingNotifier = () => {
                 ContractStartVoteNotifier();
               }}
             >
-              button to start notifier vote
+              Start notifier vote
             </Button>
           </li>
         </ul>

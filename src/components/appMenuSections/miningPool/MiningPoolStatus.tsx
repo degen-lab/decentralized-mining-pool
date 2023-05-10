@@ -8,6 +8,7 @@ import {
 import colors from '../../../consts/colorPallete';
 import useCurrentTheme from '../../../consts/theme';
 import { Box } from '@mui/material';
+import { ContractEndVoteNotifier } from '../../../consts/smartContractFunctions';
 
 const MiningPoolStatus = () => {
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
@@ -36,7 +37,13 @@ const MiningPoolStatus = () => {
   useEffect(() => {
     const getNotifierStatus = async () => {
       const notifier = await readOnlyGetNotifierElectionProcessData();
-      setNotifierVoteStatus(notifier['vote-status'].value ? 'Vote ongoing!' : "Elections haven't started yet!");
+      setNotifierVoteStatus(
+        notifier['vote-status'].value === false
+          ? 'Elections ended!'
+          : parseInt(notifier['election-blocks-remaining'].value) > 0
+          ? 'Elections on-going!'
+          : 'Not really ended.'
+      );
     };
     getNotifierStatus();
   }, [notifierVoteStatus]);
@@ -63,7 +70,14 @@ const MiningPoolStatus = () => {
         <ul>
           <li>current notifier: {currentNotifier !== null ? currentNotifier : ''}</li>
           <li>ongoing block: {currentBlock !== null ? currentBlock : ''}</li>
-          <li>notifier voting status: {notifierVoteStatus !== null ? notifierVoteStatus : ''}</li>
+          <li>
+            notifier voting status: {notifierVoteStatus !== null ? notifierVoteStatus : ''}
+            {notifierVoteStatus === 'Not really ended.' && (
+              <div>
+                <button onClick={ContractEndVoteNotifier}>End Notifier Vote</button>
+              </div>
+            )}
+          </li>
           <li>number of blocks won: {blocksWon !== null ? blocksWon : ''}</li>
         </ul>
       </div>
