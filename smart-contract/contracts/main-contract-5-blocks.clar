@@ -118,22 +118,16 @@
   (ok 
     {
       miner: miner, 
-      positive-votes: 
-        (if 
-          (is-some (get value (map-get? map-votes-accept-join {address: miner}))) 
-          (unwrap-panic (get value (map-get? map-votes-accept-join {address: miner}))) 
-          u0), 
-      negative-votes:
-        (if 
-          (is-some (get value (map-get? map-votes-reject-join {address: miner}))) 
-          (unwrap-panic (get value (map-get? map-votes-reject-join {address: miner}))) 
-          u0),
-      positive-threshold: 
+      pos-votes: 
+        (default-to u0 (get value (map-get? map-votes-accept-join {address: miner}))),
+      neg-votes:
+        (default-to u0 (get value (map-get? map-votes-reject-join {address: miner}))),
+      pos-thr: 
         (if 
           (is-eq (unwrap-panic (get-k-at-block-asked-to-join miner)) u0) 
           u1 
           (unwrap-panic (get-k-at-block-asked-to-join miner))),
-      negative-threshold: 
+      neg-thr: 
         (if   
           (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u1) 
           u1 
@@ -141,7 +135,7 @@
             (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u2) 
             u2 
             (+ (- (unwrap-panic (get-n-at-block-asked-to-join miner)) (unwrap-panic (get-k-at-block-asked-to-join miner))) u1))),
-      was-blacklist: (if (is-some (get value (map-get? map-blacklist {address: miner}))) (unwrap-panic (get value (map-get? map-blacklist {address: miner}))) false)
+      was-blklist: (default-to false (get value (map-get? map-blacklist {address: miner})))
     })))
 
 ;; proposed for removal miners
@@ -155,22 +149,16 @@
   (ok 
     {
       miner: miner,
-      votes-for-removal: 
-        (if 
-          (is-some (get value (map-get? map-votes-accept-removal {address: miner}))) 
-          (unwrap-panic (get value (map-get? map-votes-accept-removal {address: miner}))) 
-          u0),
-      votes-against-removal: 
-        (if 
-          (is-some (get value (map-get? map-votes-reject-removal {address: miner}))) 
-          (unwrap-panic (get value (map-get? map-votes-reject-removal {address: miner}))) 
-          u0),
-      positive-threshold: 
+      vts-for: 
+        (default-to u0 (get value (map-get? map-votes-accept-removal {address: miner}))),
+      vts-against: 
+        (default-to u0 (get value (map-get? map-votes-reject-removal {address: miner}))),
+      pos-thr: 
         (if 
           (is-eq (unwrap-panic (get-k-at-block-proposed-removal miner)) u0) 
           u1 
           (unwrap-panic (get-k-at-block-proposed-removal miner))),
-      negative-threshold: 
+      neg-thr: 
         (if   
           (is-eq (unwrap-panic (get-n-at-block-proposed-removal miner)) u2) 
           u1 
@@ -227,10 +215,10 @@
     {
       miner: miner,
       blocks-as-miner: (- block-height (unwrap-panic (get block-height (map-get? map-block-joined {address: miner})))),
-      was-blacklist: (if (is-some (get value (map-get? map-blacklist {address: miner}))) (unwrap-panic (get value (map-get? map-blacklist {address: miner}))) false),
-      warnings: (if (is-some (get value (map-get? map-warnings {address: miner}))) (unwrap-panic (get value (map-get? map-warnings {address: miner}))) u0),
-      balance: (if (is-some (get value (map-get? map-balance-stx {address: miner}))) (unwrap-panic (get value (map-get? map-balance-stx {address: miner}))) u0),
-      total-withdrawals: (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) u0)
+      was-blacklist: (default-to false (get value (map-get? map-blacklist {address: miner}))),
+      warnings: (default-to u0 (get value (map-get? map-warnings {address: miner}))),
+      balance: (default-to u0 (get value (map-get? map-balance-stx {address: miner}))),
+      total-withdrawals: (default-to u0 (get value (map-get? map-total-withdraw {address: miner})))
     })))
 
 ;; total withdrawals
@@ -241,9 +229,7 @@
 (define-private (get-data-miner-withdrawals (miner principal)) 
 (begin
   (ok 
-    (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) 
-      (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) 
-      u0)
+    (default-to u0 (get value (map-get? map-total-withdraw {address: miner})))
     )))
 
 ;; notifier
@@ -289,11 +275,7 @@
   (ok 
     {
       miner: miner,
-      balance: 
-        (if 
-          (is-some (get value (map-get? map-balance-stx {address: miner}))) 
-          (unwrap-panic (get value (map-get? map-balance-stx {address: miner}))) 
-          u0)
+      balance: (default-to u0 (get value (map-get? map-balance-stx {address: miner})))
     })))
 
 ;; BALANCES FLOW
