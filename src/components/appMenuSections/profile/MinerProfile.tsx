@@ -75,16 +75,23 @@ const MinerProfile = () => {
   };
 
   const depositAmount = () => {
-    if (depositAmountInput !== null) {
-      ContractDepositSTX(depositAmountInput);
-      setDepositAmountInput(null);
+    if (depositAmountInput !== null && !isNaN(depositAmountInput)) {
+      if (depositAmountInput < 0.000001) {
+        alert('You need to input more');
+      } else {
+        console.log(depositAmountInput);
+        ContractDepositSTX(depositAmountInput, userAddress);
+      }
     }
   };
 
   const withdrawAmount = () => {
-    if (withdrawAmountInput !== null) {
-      ContractWithdrawSTX(withdrawAmountInput);
-      setWithdrawAmountInput(null);
+    if (withdrawAmountInput !== null && !isNaN(withdrawAmountInput)) {
+      if (withdrawAmountInput < 0.000001) {
+        alert('You need to input more');
+      } else {
+        ContractWithdrawSTX(withdrawAmountInput, userAddress);
+      }
     }
   };
 
@@ -139,8 +146,8 @@ const MinerProfile = () => {
           <li>
             current role: <div>{currentRole}</div>
           </li>
-          <li>balance SC: {currentBalance}</li>
-          <li>total withdrawal of SC: {totalWithdrawals !== null ? totalWithdrawals : '0'}</li>
+          <li>balance SC: {currentBalance / 1000000 + ' STX'}</li>
+          <li>total withdrawal of SC: {totalWithdrawals !== null ? totalWithdrawals / 1000000 + ' STX' : '0 STX'}</li>
           <li>
             autoexchange stx to btc: {exchange === null || exchange === false ? 'No' : 'Yes'}
             <div>
@@ -195,7 +202,7 @@ const MinerProfile = () => {
             type="number"
             onChange={(e) => {
               const inputAmount = e.target.value;
-              const inputAmountToInt = parseInt(inputAmount);
+              const inputAmountToInt = parseFloat(inputAmount);
               setDepositAmountInput(inputAmountToInt);
               console.log('deposit input', inputAmount);
             }}
@@ -205,7 +212,6 @@ const MinerProfile = () => {
             className="minerProfileButtons"
             onClick={() => {
               depositAmount();
-              alert('we need to implement this functionality');
             }}
           >
             Deposit
@@ -216,7 +222,7 @@ const MinerProfile = () => {
             type="number"
             onChange={(e) => {
               const inputAmount = e.target.value;
-              const inputAmountToInt = parseInt(inputAmount);
+              const inputAmountToInt = parseFloat(inputAmount);
               setWithdrawAmountInput(inputAmountToInt);
               console.log('withdraw input', inputAmount);
             }}
@@ -226,7 +232,6 @@ const MinerProfile = () => {
             className="minerProfileButtons"
             onClick={() => {
               withdrawAmount();
-              alert('we need to implement this functionality');
             }}
           >
             Withdraw
