@@ -139,11 +139,14 @@ export const ContractStartVoteNotifier = () => {
   CallFunctions([], 'start-vote-notifier', []);
 };
 
-//
 // end-vote-notifier
 // args: none
 // what does it do: ends the vote for the notifier election
-//
+
+export const ContractEndVoteNotifier = () => {
+  CallFunctions([], 'end-vote-notifier', []);
+};
+
 // vote-notifier
 // args: (voted-notifier principal)
 // what does it do: adds a vote to the given notifier
