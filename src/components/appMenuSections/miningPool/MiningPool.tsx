@@ -75,14 +75,12 @@ const MiningPool = () => {
             ) : (
               minersRow[column.dataKey]
             )}
-            {column.dataKey === 'generalInfo' ? (
+            {column.dataKey === 'generalInfo' && (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(minersRow['address'])}>
                   <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
                 </Button>
               </Box>
-            ) : (
-              minersRow[column.dataKey]
             )}
           </TableCell>
         ))}

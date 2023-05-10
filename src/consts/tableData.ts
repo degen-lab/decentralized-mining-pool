@@ -5,6 +5,7 @@ import {
   ReadOnlyGetMinersList,
   ReadOnlyGetWaitingList,
 } from './readOnly';
+import { cvToJSON, ClarityValue } from '@stacks/transactions';
 
 // data interface for all tables, used as type in TableCreation
 
@@ -78,21 +79,6 @@ export const waitingColumns: WaitingColumnData[] = [
   },
 ];
 
-interface WaitingListProps {
-  value: {
-    value: {
-      value: {
-        miner: { value: string };
-        'negative-threshold': { value: string };
-        'positive-threshold': { value: string };
-        'negative-votes': { value: string };
-        'positive-votes': { value: string };
-        'was-blacklist': { value: boolean };
-      };
-    };
-  }[];
-}
-
 export const GetWaitingRows = () => {
   const [waitingList, setWaitingList] = useState<any>([]);
 
@@ -107,8 +93,8 @@ export const GetWaitingRows = () => {
 
   const rows =
     waitingList.length !== 0
-      ? waitingList.map((miner: WaitingListProps, index: number) => {
-          const waitingValue = miner.value[0].value.value;
+      ? waitingList.map((miner: ClarityValue, index: number) => {
+          const waitingValue = cvToJSON(miner).value[0].value.value;
           return createWaitingData(
             index,
             waitingValue.miner.value,
@@ -144,7 +130,7 @@ const createMinersData = (id: number, address: string) => {
 
 export const minerColumns: MinersColumnData[] = [
   {
-    width: 750,
+    width: 400,
     label: 'Address',
     dataKey: 'address',
   },

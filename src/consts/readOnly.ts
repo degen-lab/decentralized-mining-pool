@@ -1,7 +1,7 @@
 import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network } from './network';
 import { contractMapping } from './contract';
-import { callReadOnlyFunction, ClarityValue, ListCV, cvToJSON } from '@stacks/transactions';
+import { callReadOnlyFunction, ClarityValue, ListCV, listCV, cvToJSON } from '@stacks/transactions';
 import { convertPrincipalToArg, fromResultToList, convertCVToValue } from './converter';
 import { userSession } from '../redux/reducers/user-state';
 
@@ -70,7 +70,7 @@ export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue
     const newResult = await ReadOnlyFunctions([newWaitingList], 'get-all-data-waiting-miners');
 
     if (newResult) {
-      newResultList.push(cvToJSON(newResult));
+      newResultList.push(newResult);
     }
   }
   return newResultList;
@@ -307,13 +307,10 @@ export const readOnlyGetCurrentBlock = async () => {
 //done by Alexis with Suciu
 
 export const readOnlyExchangeToggle = async (args: string) => {
-  // const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no';
   const exchangeArgs = convertPrincipalToArg(args);
-
   const exchange = await ReadOnlyFunctions([exchangeArgs], 'get-auto-exchange');
-  console.log('exchange', cvToJSON(exchange));
 
-  // return exchange;
+  return cvToJSON(exchange).value === null ? cvToJSON(exchange).value : cvToJSON(exchange).value.value.value.value;
 };
 
 //number of blocks won
@@ -328,4 +325,16 @@ export const readOnlyGetBlocksWon = async () => {
 export const readOnlyGetStacksRewards = async () => {
   const stacksRewards = await ReadOnlyFunctions([], 'get-total-rewards-distributed');
   return cvToJSON(stacksRewards).value;
+};
+
+// get-all-data-total-withdrawals
+// args: list of addresses
+// what does it do: gets how much each address in the list has withdrawn from the sc
+// returns: number, amount
+
+export const readOnlyGetAllTotalWithdrawals = async (address: string) => {
+  const convertedArgs: ClarityValue = listCV([convertPrincipalToArg(address)]);
+  const totalWithdrawals = await ReadOnlyFunctions([convertedArgs], 'get-all-data-total-withdrawals');
+
+  return cvToJSON(totalWithdrawals).value[0].value.value;
 };

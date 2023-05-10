@@ -2,7 +2,7 @@ import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network, transactionUrl } from './network';
 import { contractMapping } from './contract';
 import { openContractCall, FinishedTxData } from '@stacks/connect';
-import { AnchorMode, PostConditionMode, ClarityValue, stringCV, uintCV } from '@stacks/transactions';
+import { AnchorMode, PostConditionMode, ClarityValue, stringCV, uintCV, boolCV } from '@stacks/transactions';
 import { convertPrincipalToArg, convertStringToArg } from './converter';
 
 const contractNetwork =
@@ -165,4 +165,12 @@ export const ContractClaimRewardsForBlock = (amount: number) => {
   const convertedArgs = [uintCV(amount)];
   // const
   CallFunctions(convertedArgs, 'reward-distribution', []);
+};
+
+// set-auto-exchange
+// args: bool value
+// what does it do: switches the state of auto-exchange to the given value
+export const ContractSetAutoExchange = (value: boolean) => {
+  const convertedArgs = [boolCV(value)];
+  CallFunctions(convertedArgs, 'set-auto-exchange', []);
 };
