@@ -5,6 +5,10 @@ authors = []
 telemetry = false
 cache_dir = '.cache'
 requirements = []
+[contracts.balance]
+path = 'contracts/balance.clar'
+clarity_version = 2
+epoch = 2.1
 
 [contracts.main-contract]
 path = 'contracts/main-contract.clar'
@@ -16,6 +20,20 @@ path = 'contracts/main-contract-5-blocks.clar'
 clarity_version = 2
 epoch = 2.1
 
+[contracts.map-list]
+path = 'contracts/map-list.clar'
+clarity_version = 2
+epoch = 2.1
+
+[contracts.map-numero]
+path = 'contracts/map-numero.clar'
+clarity_version = 2
+epoch = 2.1
+
+[contracts.map-trait-1]
+path = 'contracts/map-trait-1.clar'
+clarity_version = 2
+epoch = 2.1
 [repl.analysis]
 passes = ['check_checker']
 
