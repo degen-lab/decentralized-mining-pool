@@ -168,7 +168,9 @@ export const readOnlyGetNotifierElectionProcessData = async () => {
 // return: address, notifier which the users in arg list voted for
 export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: ClarityValue) => {
   const votedNotifier = await ReadOnlyFunctions([voterMinersList], 'get-all-data-notifier-voter-miners');
-  return cvToJSON(votedNotifier).value[0].value.value;
+  return cvToJSON(votedNotifier).value[0].value.value === '133'
+    ? "you haven't voted yet"
+    : cvToJSON(votedNotifier).value[0].value.value['voted-notifier'].value;
 };
 
 // was-block-claimed
@@ -213,8 +215,8 @@ export const readOnlyGetPrincipalsList = async (principalAddress: any) => {
 // what does it do: threshold for notifier votes
 // return: number
 export const readOnlyGetK = async () => {
-  const test = await ReadOnlyFunctions([], 'get-k');
-  console.log('TEST', test);
+  const k = await ReadOnlyFunctions([], 'get-k');
+  return Number(cvToJSON(k).value);
 };
 
 // get-notifier
@@ -249,18 +251,18 @@ export const ReadOnlyGetMinersList = async () => {
 // what does it do: returns the list of users that are pending
 // return: list
 export const readOnlyGetPendingAcceptList = async () => {
-  const test = await ReadOnlyFunctions([], 'get-pending-accept-list');
-  return test;
-  console.log('TEST', test);
+  const pendingAccept = await ReadOnlyFunctions([], 'get-pending-accept-list');
+  return pendingAccept;
 };
 
 // get-notifier-vote-number
 // args: (voted-notifier principal)
 // what does it do: get the votes for a given notifier
 // return: votes, number
-export const readOnlyGetNotifierVoteNumber = async (votedNotifierPrincipal: any) => {
-  const test = await ReadOnlyFunctions([], 'get-notifier-vote-number');
-  console.log('TEST', test);
+export const readOnlyGetNotifierVoteNumber = async (address: string) => {
+  const principal = [convertPrincipalToArg(address)];
+  const votes = await ReadOnlyFunctions(principal, 'get-notifier-vote-number');
+  return cvToJSON(votes).value === null ? 0 : Number(cvToJSON(votes).value.value);
 };
 
 // get-max-voted-notifier

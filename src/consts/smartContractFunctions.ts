@@ -150,7 +150,12 @@ export const ContractEndVoteNotifier = () => {
 // vote-notifier
 // args: (voted-notifier principal)
 // what does it do: adds a vote to the given notifier
-//
+
+export const ContractVoteForNotifier = (votedNotifier: string) => {
+  const convertedArgs = [convertPrincipalToArg(votedNotifier)];
+  CallFunctions(convertedArgs, 'vote-notifier', []);
+};
+
 // warn-miner
 // args: (miner principal)
 // what does it do: warns the user passed as argument

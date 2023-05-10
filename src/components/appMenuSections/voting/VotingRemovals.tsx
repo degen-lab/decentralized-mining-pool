@@ -86,7 +86,7 @@ const VotingRemovals = () => {
         rows={removalsRows}
         rowContent={removalsRowContent}
         columns={removalsColumns}
-        tableId="waiting"
+        tableId="removals"
         customTableWidth="75%"
       />
     </Box>

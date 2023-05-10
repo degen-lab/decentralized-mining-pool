@@ -10,40 +10,9 @@ import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
 import { GetMinersRows, minerColumns, MinersData } from '../../../consts/tableData';
 
-import { readOnlyAddressStatus } from '../../../consts/readOnly';
-import { useState, useEffect } from 'react';
-import { updateUserRoleAction } from '../../../redux/actions';
-import { useAppSelector } from '../../../redux/store';
-import { selectUserSessionState } from '../../../redux/reducers/user-state';
-
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
-  const [finalStatus, setFinalStatus] = useState<string | null>(null);
-  const userSession = useAppSelector(selectUserSessionState);
-  // will add later, after read_length too big is solved
-  // const removalRows = GetRemovalsRows();
-
-  // you'll need this in another file to get the status of the user
-  // useEffect(() => {
-  //   const fetchStatus = async () => {
-  //     const args = userSession.loadUserData().profile.stxAddress.testnet;
-  //     const status = await readOnlyAddressStatus(args);
-  //     setFinalStatus(status);
-  //   };
-  //   fetchStatus();
-  // }, [finalStatus]);
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      const args = userSession.loadUserData().profile.stxAddress.testnet;
-      const status = await readOnlyAddressStatus(args);
-      setFinalStatus(status);
-      if (finalStatus !== null) updateUserRoleAction(finalStatus);
-      console.log('status', finalStatus);
-    };
-    fetchStatus();
-  }, [finalStatus]);
 
   const handleMinerRemoveButtonClick = (address: string) => {
     ContractProposeRemoval(address);

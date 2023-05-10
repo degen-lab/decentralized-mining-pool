@@ -4,6 +4,8 @@ import {
   ReadOnlyAllDataWaitingMiners,
   ReadOnlyGetMinersList,
   ReadOnlyGetWaitingList,
+  readOnlyGetK,
+  readOnlyGetNotifierVoteNumber,
 } from './readOnly';
 import { cvToJSON, ClarityValue } from '@stacks/transactions';
 
@@ -17,6 +19,7 @@ export interface AllTableData {
   positiveVotes: string;
   wasBlacklisted: string;
   proposeRemoval: string;
+  notifierVotes: string;
   generalInfo: string;
 }
 
@@ -89,7 +92,7 @@ export const GetWaitingRows = () => {
       setWaitingList(newWaitingList);
     };
     fetchData();
-  }, [waitingList]);
+  }, []);
 
   const rows =
     waitingList.length !== 0
@@ -157,7 +160,7 @@ export const GetMinersRows = () => {
       setMinersList(newMinersList.value);
     };
     fetchData();
-  }, [minersList]);
+  }, []);
 
   const rows =
     minersList.length !== 0
@@ -247,7 +250,7 @@ export const GetRemovalsRows = () => {
       setRemovalsList(newRemovalsList);
     };
     fetchData();
-  }, [removalsList]);
+  }, []);
 
   const rows =
     removalsList.length !== 0
@@ -263,4 +266,84 @@ export const GetRemovalsRows = () => {
       : [];
 
   return rows;
+};
+
+// data for notifier voting miners
+
+export interface NotifiersData {
+  id: number;
+  address: string;
+  notifierVotes: string;
+  vote: string;
+  generalInfo: string;
+}
+
+interface NotifiersColumnData {
+  dataKey: keyof NotifiersData;
+  label: string;
+  numeric?: boolean;
+  width: number;
+}
+
+const createNotifiersData = (id: number, address: string, notifierVotes: string) => {
+  return { id, address, notifierVotes };
+};
+
+export const notifierColumns: NotifiersColumnData[] = [
+  {
+    width: 400,
+    label: 'Address',
+    dataKey: 'address',
+  },
+  {
+    width: 150,
+    label: 'Votes/Threshold',
+    dataKey: 'notifierVotes',
+    numeric: true,
+  },
+  {
+    width: 150,
+    label: 'Vote',
+    dataKey: 'vote',
+    numeric: true,
+  },
+  {
+    width: 120,
+    label: 'Miner Info',
+    dataKey: 'generalInfo',
+    numeric: true,
+  },
+];
+
+export const GetNotifiersRows = async (minersList: any, notifierVoteThreshold: number) => {
+  // const getNotifierVotes = async (address: string) => {
+  //   const votes = await readOnlyGetNotifierVoteNumber(address);
+  //   console.log(votes);
+  //   return votes;
+  // };
+
+  const getNotifierVotes = async () => {
+    const fullInfo =
+      minersList.length !== 0
+        ? await Promise.all(
+            minersList.map(async (miner: { value: string }, index: number) => {
+              const minerValue = miner.value;
+              const votes = await readOnlyGetNotifierVoteNumber(minerValue);
+              return { index, minerValue, votes };
+            })
+          )
+        : [];
+    return fullInfo;
+  };
+
+  const rows = await getNotifierVotes();
+
+  const newRows =
+    rows.length !== 0
+      ? rows.map((notifier: { index: number; minerValue: string; votes: number }) => {
+          return createNotifiersData(notifier.index, notifier.minerValue, notifier.votes + '/' + notifierVoteThreshold);
+        })
+      : [];
+
+  return newRows;
 };
