@@ -510,19 +510,24 @@
 
 ;; LEAVING FLOW
 
-;; TODO: cannot leave pool when there are only 2 miners
-
 (define-public (leave-pool)
 (begin 
   (asserts! (check-is-miner-now tx-sender) err-not-in-miner-map)
   (asserts! (not (is-eq (var-get notifier) tx-sender)) err-currently-notifier)
   (let ((remove-result (unwrap-panic (remove-principal-miners-list tx-sender)))
-        (new-k-percentage (/ (* (var-get k) u100) (- (var-get n) u2))))
+        (new-k-percentage (if (> (var-get n) u2) (/ (* (var-get k) u100) (- (var-get n) u2)) u100))) 
+        ;; if n<=2, set a value for new-k-percentage > k-critical to make sure threshold is updated
     (some (var-set miners-list remove-result))
     (var-set n (- (var-get n) u1))
     (map-set map-is-miner {address: tx-sender} {value: false})
     (if (>= new-k-percentage (var-get k-critical)) 
-      (some (update-threshold))
+      (if 
+        (> (var-get n) u1) 
+        (some (update-threshold)) 
+        (if 
+          (is-eq (var-get n) u1) 
+          (some (var-set k u1)) 
+          (some (var-set k u0))))
       none)
     (ok true))))
 
@@ -582,26 +587,29 @@
 (define-private (process-removal (miner principal))
 (begin 
   (let ((remove-result (unwrap-panic (remove-principal-miners-list miner)))
-        (new-k-percentage (/ (* (var-get k) u100) (- (var-get n) u2))))
+        (new-k-percentage (if (> (var-get n) u2) (/ (* (var-get k) u100) (- (var-get n) u2)) u100)))
     (some (var-set miners-list remove-result))
     (var-set miner-to-remove-votes-remove miner)
     (var-set n (- (var-get n) u1))
     (map-delete map-is-miner {address: miner})
     (map-set map-blacklist {address: miner} {value: true})
-    (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
-    ;; TODO: (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
-    ;; replace with this format in order to keep the list value
+    (var-set proposed-removal-list (unwrap-panic (remove-principal-proposed-removal-list miner)))
     (clear-votes-map-remove-vote miner)
     (if (>= new-k-percentage (var-get k-critical)) 
-      (update-threshold)
+      (if 
+        (> (var-get n) u1) 
+        (update-threshold) 
+        (if 
+          (is-eq (var-get n) u1) 
+          (var-set k u1)
+          (var-set k u0)))
       false)
     (ok true))))
 
 (define-private (reject-removal (miner principal))
 (begin 
   (var-set miner-to-remove-votes-remove miner)
-  (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
-  ;; TODO: (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
+  (var-set proposed-removal-list (unwrap-panic (remove-principal-proposed-removal-list miner)))
   (clear-votes-map-remove-vote miner)
   (ok true)))
 
@@ -725,8 +733,7 @@
     (map-set map-votes-notifier {voted-notifier: voted-notifier} {votes-number: u1}) 
     (map-set map-votes-notifier {voted-notifier: voted-notifier} {votes-number: (+ (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: voted-notifier}))) u1)}))
   (try! 
-    ;; TODO: why does this if compare k with current votes + 1? 
-    (if (is-vote-accepted (+ (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: voted-notifier}))) u1) (var-get k)) 
+    (if (is-vote-accepted (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: voted-notifier}))) (var-get k)) 
     (begin 
       (var-set notifier voted-notifier)
       (var-set notifier-vote-end-block block-height)
@@ -734,6 +741,7 @@
       (end-vote-notifier))
     (ok false)))
 (ok true)))
+
 ;; WARNING FLOW
 
 (define-public (warn-miner (miner principal)) 
