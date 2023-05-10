@@ -238,10 +238,11 @@
 (map get-data-miner-withdrawals local-miners-list))
 
 (define-private (get-data-miner-withdrawals (miner principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-is-miner {address: miner}))) err-not-in-miner-map)
+(begin
   (ok 
-      (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) u0)
+    (if (is-some (get value (map-get? map-total-withdraw {address: miner}))) 
+      (unwrap-panic (get value (map-get? map-total-withdraw {address: miner}))) 
+      u0)
     )))
 
 ;; notifier
@@ -508,6 +509,8 @@
 
 ;; LEAVING FLOW
 
+;; cannot leave pool when there are only 2 miners
+
 (define-public (leave-pool)
 (begin 
   (asserts! (check-is-miner-now tx-sender) err-not-in-miner-map)
@@ -573,6 +576,8 @@
       (ok false)))
   (ok true)))
 
+;; doesn't work if there are only 2 miners in the pool
+
 (define-private (process-removal (miner principal))
 (begin 
   (let ((remove-result (unwrap-panic (remove-principal-miners-list miner)))
@@ -583,6 +588,7 @@
     (map-delete map-is-miner {address: miner})
     (map-set map-blacklist {address: miner} {value: true})
     (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
+    ;;(var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
     (clear-votes-map-remove-vote miner)
     (if (>= new-k-percentage (var-get k-critical)) 
       (update-threshold)
@@ -593,6 +599,7 @@
 (begin 
   (var-set miner-to-remove-votes-remove miner)
   (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
+  ;; (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
   (clear-votes-map-remove-vote miner)
   (ok true)))
 
