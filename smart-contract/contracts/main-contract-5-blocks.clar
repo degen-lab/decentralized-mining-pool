@@ -214,6 +214,7 @@
     })))
 
 ;; miners in pool
+;; TODO: too much information to get on frontend
 
 (define-read-only (get-all-data-miners-in-pool (local-miners-list (list 100 principal))) 
 (map get-data-miner-in-pool local-miners-list))
@@ -509,7 +510,7 @@
 
 ;; LEAVING FLOW
 
-;; cannot leave pool when there are only 2 miners
+;; TODO: cannot leave pool when there are only 2 miners
 
 (define-public (leave-pool)
 (begin 
@@ -576,7 +577,7 @@
       (ok false)))
   (ok true)))
 
-;; doesn't work if there are only 2 miners in the pool
+;; TODO: doesn't work if there are only 2 miners in the pool
 
 (define-private (process-removal (miner principal))
 (begin 
@@ -588,7 +589,8 @@
     (map-delete map-is-miner {address: miner})
     (map-set map-blacklist {address: miner} {value: true})
     (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
-    ;;(var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
+    ;; TODO: (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
+    ;; replace with this format in order to keep the list value
     (clear-votes-map-remove-vote miner)
     (if (>= new-k-percentage (var-get k-critical)) 
       (update-threshold)
@@ -599,7 +601,7 @@
 (begin 
   (var-set miner-to-remove-votes-remove miner)
   (unwrap! (remove-principal-proposed-removal-list miner) err-list-length-exceeded)
-  ;; (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
+  ;; TODO: (var-set waiting-list (unwrap-panic (as-max-len? (unwrap-panic (remove-principal-waiting-list miner)) u300))) ;; O(N)
   (clear-votes-map-remove-vote miner)
   (ok true)))
 
@@ -723,6 +725,7 @@
     (map-set map-votes-notifier {voted-notifier: voted-notifier} {votes-number: u1}) 
     (map-set map-votes-notifier {voted-notifier: voted-notifier} {votes-number: (+ (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: voted-notifier}))) u1)}))
   (try! 
+    ;; TODO: why does this if compare k with current votes + 1? 
     (if (is-vote-accepted (+ (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: voted-notifier}))) u1) (var-get k)) 
     (begin 
       (var-set notifier voted-notifier)
