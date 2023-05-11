@@ -7,6 +7,7 @@ import { ContractVotePositiveJoin, ContractVoteNegativeJoin } from '../../../con
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import Button from '@mui/material/Button';
+import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../../components/TableCreation';
 import { WaitingData, waitingColumns, GetWaitingRows } from '../../../consts/tableData';
 
@@ -22,6 +23,12 @@ const VotingJoiners = () => {
     }
   };
 
+  const handleMinerInfoButtonClick = (address: string) => {
+    // change this call to redirect the one who clicked to a new tab, or make a popup with the info of the given miner
+    // the call is named 'readOnlyGetAllDataMinersInPool', but for now it gives read_length error (@deployer needs to fix it)
+    // ContractVotePositiveJoin(address);
+  };
+
   const waitingRowContent = (_index: number, waitingRow: WaitingData) => {
     return (
       <React.Fragment>
@@ -33,6 +40,13 @@ const VotingJoiners = () => {
               color: colors[currentTheme].secondary,
             }}
           >
+            {column.dataKey === 'generalInfo' && (
+              <Box>
+                <Button onClick={() => handleMinerInfoButtonClick(waitingRow['address'])}>
+                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
+                </Button>
+              </Box>
+            )}
             {column.dataKey === 'vote' ? (
               <Box>
                 <Button onClick={() => handlePendingVoteButtonClick('voteYes', waitingRow['address'])}>

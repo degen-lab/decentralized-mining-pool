@@ -21,7 +21,7 @@ const WaitingMinerProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       const waitingList = await ReadOnlyAllDataWaitingMiners(userAddressAsCV);
-      const newWaitingList = cvToJSON(waitingList[0]);
+      const newWaitingList = cvToJSON(waitingList.newResultList[0]);
       setPositiveVotes(newWaitingList.value[0].value.value['pos-votes'].value);
       setPositiveVotesThreshold(newWaitingList.value[0].value.value['pos-thr'].value);
       setNegativeVotes(newWaitingList.value[0].value.value['neg-votes'].value);

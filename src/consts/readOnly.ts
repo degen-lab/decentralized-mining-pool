@@ -59,6 +59,7 @@ export const readOnlyAddressStatus = async (args: string) => {
 
 export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue) => {
   const newResultList: ClarityValue[] = [];
+  const newAddressList: ClarityValue[] = [];
   const step = 1;
 
   for (
@@ -70,10 +71,11 @@ export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue
     const newResult = await ReadOnlyFunctions([newWaitingList], 'get-all-data-waiting-miners');
 
     if (newResult) {
+      newAddressList.push(newWaitingList);
       newResultList.push(newResult);
     }
   }
-  return newResultList;
+  return { newResultList, newAddressList };
 };
 
 // get-proposed-removal-list
@@ -93,6 +95,7 @@ export const ReadOnlyGetProposedRemovalList = async () => {
 
 export const ReadOnlyAllDataProposedRemovalMiners = async () => {
   const newResultList: ClarityValue[] = [];
+  const newAddressList: ClarityValue[] = [];
   const fullRemovalsList: ClarityValue = await ReadOnlyGetProposedRemovalList();
   const step = 1;
 
@@ -105,10 +108,11 @@ export const ReadOnlyAllDataProposedRemovalMiners = async () => {
     const newResult = await ReadOnlyFunctions([newRemovalsList], 'get-all-data-miners-proposed-for-removal');
 
     if (newResult) {
+      newAddressList.push(cvToJSON(newRemovalsList));
       newResultList.push(cvToJSON(newResult));
     }
   }
-  return newResultList;
+  return { newResultList, newAddressList };
 };
 
 // get-all-data-miners-pending-accept

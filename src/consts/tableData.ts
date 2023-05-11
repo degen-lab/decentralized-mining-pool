@@ -31,7 +31,7 @@ export interface WaitingData {
   negativeVotes: string;
   vote: string;
   positiveVotes: string;
-  wasBlacklisted: string;
+  generalInfo: string;
 }
 
 interface WaitingColumnData {
@@ -41,14 +41,8 @@ interface WaitingColumnData {
   width: number;
 }
 
-const createWaitingData = (
-  id: number,
-  address: string,
-  negativeVotes: string,
-  positiveVotes: string,
-  wasBlacklisted: string
-) => {
-  return { id, address, negativeVotes, positiveVotes, wasBlacklisted };
+const createWaitingData = (id: number, address: string, negativeVotes: string, positiveVotes: string) => {
+  return { id, address, negativeVotes, positiveVotes };
 };
 
 export const waitingColumns: WaitingColumnData[] = [
@@ -77,19 +71,21 @@ export const waitingColumns: WaitingColumnData[] = [
   },
   {
     width: 120,
-    label: 'Blacklisted',
-    dataKey: 'wasBlacklisted',
+    label: 'Miner Info',
+    dataKey: 'generalInfo',
   },
 ];
 
 export const GetWaitingRows = () => {
   const [waitingList, setWaitingList] = useState<any>([]);
+  const [addressList, setAddressList] = useState<any>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const fullWaitingList = await ReadOnlyGetWaitingList();
       const newWaitingList = await ReadOnlyAllDataWaitingMiners(fullWaitingList);
-      setWaitingList(newWaitingList);
+      setWaitingList(newWaitingList.newResultList);
+      setAddressList(newWaitingList.newAddressList);
     };
     fetchData();
   }, []);
@@ -98,13 +94,12 @@ export const GetWaitingRows = () => {
     waitingList.length !== 0
       ? waitingList.map((miner: ClarityValue, index: number) => {
           const waitingValue = cvToJSON(miner).value[0].value.value;
-          console.log(waitingValue);
+          const waitingAddress = cvToJSON(addressList[index]).value[0].value;
           return createWaitingData(
             index,
-            waitingValue.miner.value,
+            waitingAddress,
             waitingValue['neg-votes'].value + '/' + waitingValue['neg-thr'].value,
-            waitingValue['pos-votes'].value + '/' + waitingValue['pos-thr'].value,
-            !waitingValue['was-blklist'].value ? 'No' : 'Yes'
+            waitingValue['pos-votes'].value + '/' + waitingValue['pos-thr'].value
           );
         })
       : [];
@@ -232,7 +227,6 @@ interface RemovalsListProps {
   value: {
     value: {
       value: {
-        miner: { value: string };
         'neg-thr': { value: string };
         'pos-thr': { value: string };
         'vts-against': { value: string };
@@ -244,11 +238,13 @@ interface RemovalsListProps {
 
 export const GetRemovalsRows = () => {
   const [removalsList, setRemovalsList] = useState<any>([]);
+  const [addressList, setAddressList] = useState<any>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const newRemovalsList = await ReadOnlyAllDataProposedRemovalMiners();
-      setRemovalsList(newRemovalsList);
+      setRemovalsList(newRemovalsList.newResultList);
+      setAddressList(newRemovalsList.newAddressList);
     };
     fetchData();
   }, []);
@@ -259,7 +255,7 @@ export const GetRemovalsRows = () => {
           const removalsValue = miner.value[0].value.value;
           return createRemovalsData(
             index,
-            removalsValue.miner.value,
+            addressList[index].value[0].value,
             removalsValue['vts-against'].value + '/' + removalsValue['neg-thr'].value,
             removalsValue['vts-for'].value + '/' + removalsValue['pos-thr'].value
           );
