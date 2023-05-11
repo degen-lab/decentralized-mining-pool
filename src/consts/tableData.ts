@@ -98,12 +98,13 @@ export const GetWaitingRows = () => {
     waitingList.length !== 0
       ? waitingList.map((miner: ClarityValue, index: number) => {
           const waitingValue = cvToJSON(miner).value[0].value.value;
+          console.log(waitingValue);
           return createWaitingData(
             index,
             waitingValue.miner.value,
-            waitingValue['negative-votes'].value + '/' + waitingValue['negative-threshold'].value,
-            waitingValue['positive-votes'].value + '/' + waitingValue['positive-threshold'].value,
-            !waitingValue['was-blacklist'].value ? 'No' : 'Yes'
+            waitingValue['neg-votes'].value + '/' + waitingValue['neg-thr'].value,
+            waitingValue['pos-votes'].value + '/' + waitingValue['pos-thr'].value,
+            !waitingValue['was-blklist'].value ? 'No' : 'Yes'
           );
         })
       : [];
@@ -232,10 +233,10 @@ interface RemovalsListProps {
     value: {
       value: {
         miner: { value: string };
-        'negative-threshold': { value: string };
-        'positive-threshold': { value: string };
-        'votes-against-removal': { value: string };
-        'votes-for-removal': { value: string };
+        'neg-thr': { value: string };
+        'pos-thr': { value: string };
+        'vts-against': { value: string };
+        'vts-for': { value: string };
       };
     };
   }[];
@@ -259,8 +260,8 @@ export const GetRemovalsRows = () => {
           return createRemovalsData(
             index,
             removalsValue.miner.value,
-            removalsValue['votes-against-removal'].value + '/' + removalsValue['negative-threshold'].value,
-            removalsValue['votes-for-removal'].value + '/' + removalsValue['positive-threshold'].value
+            removalsValue['vts-against'].value + '/' + removalsValue['neg-thr'].value,
+            removalsValue['vts-for'].value + '/' + removalsValue['pos-thr'].value
           );
         })
       : [];

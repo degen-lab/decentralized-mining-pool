@@ -20,7 +20,6 @@ import {
   ContractWithdrawSTX,
   ContractSetAutoExchange,
 } from '../../../consts/smartContractFunctions';
-import { updateUserRoleAction } from '../../../redux/actions';
 
 const MinerProfile = () => {
   const [currentBalance, setCurrentBalance] = useState<number>(0);
@@ -37,7 +36,6 @@ const MinerProfile = () => {
   const [totalWithdrawals, setTotalWithdrawals] = useState<number | null>(null);
   const [btcAddress, setBtcAddress] = useState<string>('');
   const userSession = useAppSelector(selectUserSessionState);
-  const dispatch = useAppDispatch();
 
   const userAddress = userSession.loadUserData().profile.stxAddress.testnet;
   console.log('user address', userAddress);
@@ -65,7 +63,6 @@ const MinerProfile = () => {
     setLeavePoolButtonClicked(true);
     if (currentNotifier !== null && currentNotifier !== userAddress) {
       ContractLeavePool();
-      dispatch(updateUserRoleAction('NormalUser'));
     } else if (currentNotifier !== null && currentNotifier === userAddress) {
       console.log("you art the notifier, you can't leave pool");
 
@@ -90,7 +87,7 @@ const MinerProfile = () => {
       if (withdrawAmountInput < 0.000001) {
         alert('You need to input more');
       } else {
-        ContractWithdrawSTX(withdrawAmountInput, userAddress);
+        ContractWithdrawSTX(withdrawAmountInput);
       }
     }
   };

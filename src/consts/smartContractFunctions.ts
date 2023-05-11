@@ -11,6 +11,7 @@ import {
   boolCV,
   FungibleConditionCode,
   makeStandardSTXPostCondition,
+  makeContractSTXPostCondition,
   STXPostCondition,
 } from '@stacks/transactions';
 import { convertPrincipalToArg, convertStringToArg } from './converter';
@@ -43,12 +44,26 @@ const CallFunctions = (
   openContractCall(options);
 };
 
-export const createPostConditionSTXTransfer = (userAddress: string, conditionAmount: number) => {
+const createPostConditionSTXTransferToContract = (userAddress: string, conditionAmount: number) => {
   const postConditionAddress = userAddress;
   const postConditionCode = FungibleConditionCode.Equal;
   const postConditionAmount = conditionAmount;
 
   return makeStandardSTXPostCondition(postConditionAddress, postConditionCode, postConditionAmount);
+};
+
+const createPostConditionSTXTransferFromContract = (conditionAmount: number) => {
+  const postConditionAddress = contractMapping[network].contractAddress;
+  const postConditionContract = contractMapping[network].contractName;
+  const postConditionCode = FungibleConditionCode.Equal;
+  const postConditionAmount = conditionAmount;
+
+  return makeContractSTXPostCondition(
+    postConditionAddress,
+    postConditionContract,
+    postConditionCode,
+    postConditionAmount
+  );
 };
 
 // vote-positive-join-request
@@ -95,16 +110,16 @@ export const ContractAskToJoin = (args: string) => {
 
 export const ContractDepositSTX = (amount: number, userAddress: string) => {
   const convertedArgs = [uintCV(amount * 1000000)];
-  const postConditions = createPostConditionSTXTransfer(userAddress, amount * 1000000);
+  const postConditions = createPostConditionSTXTransferToContract(userAddress, amount * 1000000);
   CallFunctions(convertedArgs, 'deposit-stx', [postConditions]);
 };
 //
 // withdraw-stx
 // args: (amount uint)
 // what does it do: withdraws stx from user's account
-export const ContractWithdrawSTX = (amount: number, userAddress: string) => {
+export const ContractWithdrawSTX = (amount: number) => {
   const convertedArgs = [uintCV(amount * 1000000)];
-  const postConditions = createPostConditionSTXTransfer(userAddress, amount * 1000000);
+  const postConditions = createPostConditionSTXTransferFromContract(amount * 1000000);
   CallFunctions(convertedArgs, 'withdraw-stx', [postConditions]);
 };
 //

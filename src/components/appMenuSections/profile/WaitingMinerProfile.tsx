@@ -22,10 +22,10 @@ const WaitingMinerProfile = () => {
     const fetchData = async () => {
       const waitingList = await ReadOnlyAllDataWaitingMiners(userAddressAsCV);
       const newWaitingList = cvToJSON(waitingList[0]);
-      setPositiveVotes(newWaitingList.value[0].value.value['positive-votes'].value);
-      setPositiveVotesThreshold(newWaitingList.value[0].value.value['positive-threshold'].value);
-      setNegativeVotes(newWaitingList.value[0].value.value['negative-votes'].value);
-      setNegativeVotesThreshold(newWaitingList.value[0].value.value['negative-threshold'].value);
+      setPositiveVotes(newWaitingList.value[0].value.value['pos-votes'].value);
+      setPositiveVotesThreshold(newWaitingList.value[0].value.value['pos-thr'].value);
+      setNegativeVotes(newWaitingList.value[0].value.value['neg-votes'].value);
+      setNegativeVotesThreshold(newWaitingList.value[0].value.value['neg-thr'].value);
     };
     fetchData();
   }, [positiveVotes, positiveVotesThreshold, negativeVotes, negativeVotesThreshold]);
