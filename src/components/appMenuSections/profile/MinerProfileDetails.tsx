@@ -18,7 +18,7 @@ const Voting = () => {
   const currentLink = window.location.href;
   const addressParts = currentLink.split('/');
   const address = addressParts[addressParts.length - 1];
-  const [minerData, setMinerData] = useState<MinerDataProps | string>('');
+  const [minerData, setMinerData] = useState<MinerDataProps | string | null>(null);
   const [wasBlacklisted, setWasBlacklisted] = useState<boolean | null>(null);
   const [warnings, setWarnings] = useState<number | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
@@ -41,7 +41,7 @@ const Voting = () => {
   }, []);
 
   useEffect(() => {
-    if (typeof minerData !== 'string') {
+    if (typeof minerData !== 'string' && minerData !== null) {
       setWasBlacklisted(minerData.wasBlacklisted);
       setWarnings(minerData.warnings);
       setBalance(minerData.balance);
@@ -49,6 +49,27 @@ const Voting = () => {
       setBlocksAsMiner(minerData.minerBlocks);
     }
   }, [minerData]);
+
+  if (minerData === null) {
+    return (
+      <Box
+        sx={{
+          minHeight: 'calc(100vh - 60px)',
+          backgroundColor: colors[currentTheme].accent2,
+          color: colors[currentTheme].secondary,
+          marginTop: -2.5,
+        }}
+      >
+        <div>
+          <h2>Miner Profile - Details</h2>
+          <ul>
+            <li>Address: {address}</li>
+            <li>Wrong Address!</li>
+          </ul>
+        </div>
+      </Box>
+    );
+  }
 
   return (
     <Box

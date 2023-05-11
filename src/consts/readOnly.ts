@@ -220,7 +220,7 @@ export const readOnlyGetMinersBalanceData = async (localMinersList: any) => {
 export const readOnlyGetBalance = async (principalAddress: string) => {
   const balanceArgs = convertPrincipalToArg(principalAddress);
   const balance = await ReadOnlyFunctions([balanceArgs], 'get-balance');
-  return Number(convertCVToValue(balance).value);
+  return cvToJSON(balance).value !== null ? Number(cvToJSON(balance).value.value) : 0;
 };
 
 // get-principals-list
