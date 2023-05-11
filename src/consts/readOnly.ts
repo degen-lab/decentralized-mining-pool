@@ -162,7 +162,7 @@ export const readOnlyGetAllDataMinersInPool = async (address: string) => {
   const warnings = Number(cvToJSON(minerData).value[0].value.value.warnings.value);
   const wasBlacklisted = cvToJSON(minerData).value[0].value.value['was-blacklist'].value;
 
-  return { address, totalWithdraw, balance, minerBlocks, warnings, wasBlacklisted };
+  return { totalWithdraw, balance, minerBlocks, warnings, wasBlacklisted };
 };
 
 // get-remaining-blocks-until-join

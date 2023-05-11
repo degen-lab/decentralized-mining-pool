@@ -9,9 +9,10 @@ import TableCreation from '../../../components/TableCreation';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
 import { GetMinersRows, minerColumns, MinersData } from '../../../consts/tableData';
-import { readOnlyGetAllDataMinersInPool } from '../../../consts/readOnly';
+import { useNavigate } from 'react-router-dom';
 
 const MiningPool = () => {
+  const navigate = useNavigate();
   const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
 
@@ -20,7 +21,7 @@ const MiningPool = () => {
   };
 
   const handleMinerInfoButtonClick = async (address: string) => {
-    console.log(await readOnlyGetAllDataMinersInPool(address));
+    navigate(`/profile/${address}`);
   };
 
   const minersRowContent = (_index: number, minersRow: MinersData) => {
