@@ -117,7 +117,6 @@
   (asserts! (is-some (get value (map-get? map-is-waiting {address: miner}))) err-not-waiting)
   (ok 
     {
-      miner: miner, 
       pos-votes: 
         (default-to u0 (get value (map-get? map-votes-accept-join {address: miner}))),
       neg-votes:
@@ -135,7 +134,6 @@
             (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u2) 
             u2 
             (+ (- (unwrap-panic (get-n-at-block-asked-to-join miner)) (unwrap-panic (get-k-at-block-asked-to-join miner))) u1))),
-      was-blklist: (default-to false (get value (map-get? map-blacklist {address: miner})))
     })))
 
 ;; proposed for removal miners
@@ -148,7 +146,6 @@
   (asserts! (is-some (get value (map-get? map-is-proposed-for-removal {address: miner}))) err-not-pending)
   (ok 
     {
-      miner: miner,
       vts-for: 
         (default-to u0 (get value (map-get? map-votes-accept-removal {address: miner}))),
       vts-against: 
@@ -213,12 +210,10 @@
   (asserts! (is-some (get block-height (map-get? map-block-joined {address: miner}))) err-no-join-block-data)
   (ok 
     {
-      miner: miner,
       blocks-as-miner: (- block-height (unwrap-panic (get block-height (map-get? map-block-joined {address: miner})))),
       was-blacklist: (default-to false (get value (map-get? map-blacklist {address: miner}))),
       warnings: (default-to u0 (get value (map-get? map-warnings {address: miner}))),
       balance: (default-to u0 (get value (map-get? map-balance-stx {address: miner}))),
-      total-withdrawals: (default-to u0 (get value (map-get? map-total-withdraw {address: miner})))
     })))
 
 ;; total withdrawals
