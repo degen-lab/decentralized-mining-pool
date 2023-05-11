@@ -6,9 +6,9 @@ import { readOnlyGetAllDataMinersInPool } from '../../../consts/readOnly';
 import { getExplorerUrl, network } from '../../../consts/network';
 
 interface MinerDataProps {
-  balance: number;
+  balance: string;
   minerBlocks: number;
-  totalWithdraw: number;
+  totalWithdraw: string;
   warnings: number;
   wasBlacklisted: boolean;
 }
@@ -21,8 +21,8 @@ const Voting = () => {
   const [minerData, setMinerData] = useState<MinerDataProps | string>('');
   const [wasBlacklisted, setWasBlacklisted] = useState<boolean | null>(null);
   const [warnings, setWarnings] = useState<number | null>(null);
-  const [balance, setBalance] = useState<number | null>(null);
-  const [totalWithdrawals, setTotalWithdrawals] = useState<number | null>(null);
+  const [balance, setBalance] = useState<string | null>(null);
+  const [totalWithdrawals, setTotalWithdrawals] = useState<string | null>(null);
   const [blocksAsMiner, setBlocksAsMiner] = useState<number | null>(null);
   const [explorerLink, setExplorerLink] = useState<string | undefined>(undefined);
 
