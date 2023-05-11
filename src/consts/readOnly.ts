@@ -217,7 +217,7 @@ export const readOnlyGetMinersBalanceData = async (localMinersList: any) => {
 // what does it do: returns balance for given address
 // return: balance
 export const readOnlyGetBalance = async (principalAddress: string) => {
-  const balanceArgs = convertPrincipalToList(principalAddress);
+  const balanceArgs = convertPrincipalToArg(principalAddress);
   const balance = await ReadOnlyFunctions([balanceArgs], 'get-balance');
   return Number(convertCVToValue(balance).value);
 };
