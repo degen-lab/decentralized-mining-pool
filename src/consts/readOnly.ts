@@ -2,7 +2,7 @@ import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network } from './network';
 import { contractMapping } from './contract';
 import { callReadOnlyFunction, ClarityValue, ListCV, listCV, cvToJSON } from '@stacks/transactions';
-import { convertPrincipalToArg, fromResultToList, convertCVToValue } from './converter';
+import { convertPrincipalToArg, convertPrincipalToList, fromResultToList, convertCVToValue } from './converter';
 import { userSession } from '../redux/reducers/user-state';
 
 const contractNetwork =
@@ -143,9 +143,26 @@ export const readOnlyGetAllDataMinersPendingAccept = async () => {
 // args: (local-miners-list (list 100 principal))
 // what does it do: it returns the details for every miner from arg list
 // return: address, blocks as miner, was blacklisted, warnings, balance, total withdrawals
-export const readOnlyGetAllDataMinersInPool = async (localMinersList: any) => {
-  const test = await ReadOnlyFunctions([], 'get-all-data-miners-in-pool');
-  console.log('TEST', test);
+export const readOnlyGetAllDataMinersInPool = async (address: string) => {
+  const convertedArgs = [convertPrincipalToList(address)];
+  const minerData = await ReadOnlyFunctions(convertedArgs, 'get-all-data-miners-in-pool');
+  const withdraws = await readOnlyGetAllTotalWithdrawals(address);
+
+  if (cvToJSON(minerData).value[0].value.value === '104') {
+    return 'not-a-miner';
+  }
+
+  if (cvToJSON(minerData).value[0].value.value === '132') {
+    return 'block-height-error';
+  }
+
+  const totalWithdraw = Number(withdraws);
+  const balance = Number(cvToJSON(minerData).value[0].value.value.balance.value);
+  const minerBlocks = Number(cvToJSON(minerData).value[0].value.value['blocks-as-miner'].value);
+  const warnings = Number(cvToJSON(minerData).value[0].value.value.warnings.value);
+  const wasBlacklisted = cvToJSON(minerData).value[0].value.value['was-blacklist'].value;
+
+  return { address, totalWithdraw, balance, minerBlocks, warnings, wasBlacklisted };
 };
 
 // get-remaining-blocks-until-join
@@ -200,7 +217,7 @@ export const readOnlyGetMinersBalanceData = async (localMinersList: any) => {
 // what does it do: returns balance for given address
 // return: balance
 export const readOnlyGetBalance = async (principalAddress: string) => {
-  const balanceArgs = convertPrincipalToArg(principalAddress);
+  const balanceArgs = convertPrincipalToList(principalAddress);
   const balance = await ReadOnlyFunctions([balanceArgs], 'get-balance');
   return Number(convertCVToValue(balance).value);
 };

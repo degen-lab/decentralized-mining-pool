@@ -9,6 +9,7 @@ import TableCreation from '../../../components/TableCreation';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
 import { GetMinersRows, minerColumns, MinersData } from '../../../consts/tableData';
+import { readOnlyGetAllDataMinersInPool } from '../../../consts/readOnly';
 
 const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
@@ -18,10 +19,8 @@ const MiningPool = () => {
     ContractProposeRemoval(address);
   };
 
-  const handleMinerInfoButtonClick = (address: string) => {
-    // change this call to redirect the one who clicked to a new tab, or make a popup with the info of the given miner
-    // the call is named 'readOnlyGetAllDataMinersInPool', but for now it gives read_length error (@deployer needs to fix it)
-    // ContractVotePositiveJoin(address);
+  const handleMinerInfoButtonClick = async (address: string) => {
+    console.log(await readOnlyGetAllDataMinersInPool(address));
   };
 
   const minersRowContent = (_index: number, minersRow: MinersData) => {

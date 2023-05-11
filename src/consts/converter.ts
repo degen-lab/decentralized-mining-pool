@@ -20,6 +20,10 @@ export const convertPrincipalToArg = (principal: string) => {
   return principalCV(principal);
 };
 
+export const convertPrincipalToList = (principal: string) => {
+  return listCV([principalCV(principal)]);
+};
+
 export const isPrincipal = (str: string) => {
   const secondChar = network !== 'mainnet' ? 'T' : 'P';
   if (str.charAt(0) === 'S' && str.charAt(1) === secondChar && str.length >= 39 && str.length <= 41) {
