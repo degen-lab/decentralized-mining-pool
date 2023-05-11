@@ -147,6 +147,7 @@ export const readOnlyGetAllDataMinersInPool = async (address: string) => {
   const convertedArgs = [convertPrincipalToList(address)];
   const minerData = await ReadOnlyFunctions(convertedArgs, 'get-all-data-miners-in-pool');
   const withdraws = await readOnlyGetAllTotalWithdrawals(address);
+  const rawBalance = await readOnlyGetBalance(address);
 
   if (cvToJSON(minerData).value[0].value.value === '104') {
     return 'not-a-miner';
@@ -156,8 +157,8 @@ export const readOnlyGetAllDataMinersInPool = async (address: string) => {
     return 'block-height-error';
   }
 
-  const totalWithdraw = Number(withdraws);
-  const balance = Number(cvToJSON(minerData).value[0].value.value.balance.value);
+  const totalWithdraw = Number(withdraws / 1000000) + ' STX';
+  const balance = Number(rawBalance / 1000000) + ' STX';
   const minerBlocks = Number(cvToJSON(minerData).value[0].value.value['blocks-as-miner'].value);
   const warnings = Number(cvToJSON(minerData).value[0].value.value.warnings.value);
   const wasBlacklisted = cvToJSON(minerData).value[0].value.value['was-blacklist'].value;
