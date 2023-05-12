@@ -1,0 +1,74 @@
+.info-container-profile-page {
+  background-color: lightblue;
+  /* width: 400px; */
+  border-radius: 25px;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+}
+
+.heading-info-container {
+  height: 40px;
+  width: 100%;
+  padding-block: 5px;
+  background-color: white;
+  border-bottom: 1px black solid;
+}
+
+.heading-title-info-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.heading-icon-info-container {
+  height: 100% !important;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon-info-container {
+  height: 100%;
+  width: 100%;
+  color: orange;
+  margin-left: -5px;
+}
+
+.title-info-continer {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.content-info-container {
+  padding-block: 5px;
+  background-color: pink;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.content-sections-title-info-container {
+  font-weight: bold;
+  padding-block: 3px;
+}
+
+/* ********************************** BUTTONS **********************************  */
+
+.customButton {
+  /* height: 30px; */
+  cursor: pointer;
+  font-size: 15px;
+  border: 1px solid #ed693c;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #fdc60b 30%, #ed693c 100%);
+}
+
+.customButton:hover {
+  box-shadow: 1px 1px 4px #fdc60b, -1px -1px 4px #ed693c;
+  background: none;
+  background-color: white;
+}

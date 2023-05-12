@@ -20,8 +20,16 @@ import {
   ContractWithdrawSTX,
   ContractSetAutoExchange,
 } from '../../../consts/smartContractFunctions';
+import AboutContainer from '../../reusableComponents/profile/AboutContainer';
+import ActivityContainer from '../../reusableComponents/profile/ActivityContainer';
+import ActionsContainer from '../../reusableComponents/profile/ActionsContainer';
 
-const MinerProfile = () => {
+interface IMinerProfileProps {
+  connectedWallet: string | null;
+  explorerLink: string | undefined;
+}
+
+const MinerProfile = ({ connectedWallet, explorerLink }: IMinerProfileProps) => {
   const [currentBalance, setCurrentBalance] = useState<number>(0);
   const { currentTheme } = useCurrentTheme();
   const currentRole = useAppSelector(selectCurrentUserRole);
@@ -259,6 +267,10 @@ const MinerProfile = () => {
           </Alert>
         </div>
       )}
+
+      <AboutContainer currentRole={currentRole} connectedWallet={connectedWallet} explorerLink={explorerLink} />
+      <ActivityContainer />
+      <ActionsContainer />
     </Box>
   );
 };
