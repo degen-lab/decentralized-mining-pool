@@ -18,6 +18,7 @@ import React from 'react';
 import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../TableCreation';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import { useNavigate } from 'react-router-dom';
 
 const VotingNotifier = () => {
   const { currentTheme } = useCurrentTheme();
@@ -28,11 +29,10 @@ const VotingNotifier = () => {
   const [votedNotifier, setVotedNotifier] = useState<string | null>(null);
   const userSession = useAppSelector(selectUserSessionState);
   const [notifiersRows, setNotifiersRows] = useState<any>([]);
+  const navigate = useNavigate();
 
   const handleMinerInfoButtonClick = (address: string) => {
-    // change this call to redirect the one who clicked to a new tab, or make a popup with the info of the given miner
-    // the call is named 'readOnlyGetAllDataMinersInPool', but for now it gives read_length error (@deployer needs to fix it)
-    // ContractVotePositiveJoin(address);
+    navigate(`/profile/${address}`);
   };
 
   const handlePendingVoteButtonClick = (address: string) => {
