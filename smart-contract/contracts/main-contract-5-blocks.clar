@@ -42,8 +42,7 @@
 (define-constant err-already-distributed (err u1003))
 (define-constant err-cant-unwrap-rewarded-block (err u1004))
 
-;;TODO: change this back to 144
-(define-constant notifier-election-blocks-to-pass u5)
+(define-constant notifier-election-blocks-to-pass u144)
 (define-constant blocks-to-pass u5)
 
 (define-map balance principal uint)
@@ -102,7 +101,7 @@
 
 
 (map-set map-is-miner {address: tx-sender} {value: true})
-(map-set map-block-asked-to-join {address: tx-sender} {value: u0})
+(map-set map-block-joined {address: tx-sender} {block-height: u0})
 (map-set balance tx-sender u0)
 ;; at new join -> block height - last-join-done >= 100 !
 
@@ -200,7 +199,6 @@
     })))
 
 ;; miners in pool
-;; TODO: too much information to get on frontend
 
 (define-read-only (get-all-data-miners-in-pool (local-miners-list (list 100 principal))) 
 (map get-data-miner-in-pool local-miners-list))
@@ -214,7 +212,6 @@
       blocks-as-miner: (- block-height (unwrap-panic (get block-height (map-get? map-block-joined {address: miner})))),
       was-blacklist: (default-to false (get value (map-get? map-blacklist {address: miner}))),
       warnings: (default-to u0 (get value (map-get? map-warnings {address: miner}))),
-      balance: (default-to u0 (get value (map-get? map-balance-stx {address: miner}))),
     })))
 
 ;; total withdrawals
@@ -560,8 +557,6 @@
       (ok false)))
   (ok true)))
 
-;; TODO: doesn't work if there are only 2 miners in the pool
-
 (define-private (process-removal (miner principal))
 (begin 
   (let ((remove-result (unwrap-panic (remove-principal-miners-list miner)))
@@ -659,7 +654,6 @@
 (begin 
   (asserts! (>= block-height (var-get notifier-vote-end-block)) err-voting-still-active)
   (unwrap! (get-max-votes-number-notifier) (err u99999))
-  (asserts! false (err u12345))
   (if (> (var-get max-votes-notifier) (/ (var-get k) u2)) 
     (var-set notifier (var-get max-voted-proposed-notifier))
     false)
@@ -671,21 +665,26 @@
 (ok (map compare-votes-number-notifier (var-get miners-list))))
 
 (define-private (compare-votes-number-notifier (proposed-notifier principal)) 
-(ok (if (is-some (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))
-(if (> (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (var-get max-votes-notifier)) 
-  (begin 
-    (var-set max-votes-notifier (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))) 
-    (var-set max-voted-proposed-notifier proposed-notifier))
-  (if (is-eq (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (var-get max-votes-notifier)) 
-    (if 
-      (< 
-        (unwrap-panic (get block-height (map-get? map-block-joined {address: proposed-notifier}))) 
-        (unwrap-panic (get block-height (map-get? map-block-joined {address: (var-get max-voted-proposed-notifier)})))) 
-      (begin 
+(ok 
+(if (is-some (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))
+    (if (> (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (/ (var-get k) u2))
+      (if 
+        (> (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (var-get max-votes-notifier)) 
+        (begin 
+          (var-set max-votes-notifier (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))) 
           (var-set max-voted-proposed-notifier proposed-notifier))
+        (if 
+          (is-eq (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (var-get max-votes-notifier)) 
+          (if 
+            (< 
+              (unwrap-panic (get block-height (map-get? map-block-joined {address: proposed-notifier}))) 
+              (unwrap-panic (get block-height (map-get? map-block-joined {address: (var-get max-voted-proposed-notifier)})))) 
+            (begin 
+                (var-set max-voted-proposed-notifier proposed-notifier))
+            false)
+        false))
       false)
-  false))
-  false)))
+    false)))
 
 (define-private (delete-all-notifier-entries) 
 (begin 
