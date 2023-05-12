@@ -46,21 +46,23 @@ const Voting = () => {
       };
       fetchBlocksLeft();
     }
-  }, [blocksLeftUntilJoin]);
+  }, [status]);
 
   useEffect(() => {
     if (status === 'Waiting') {
       const fetchData = async () => {
         const waitingList = await ReadOnlyAllDataWaitingMiners(listCV([principalCV(address)]));
-        const newWaitingList = cvToJSON(waitingList.newResultList[0]);
-        setPositiveVotes(newWaitingList.value[0].value.value['pos-votes'].value);
-        setPositiveVotesThreshold(newWaitingList.value[0].value.value['pos-thr'].value);
-        setNegativeVotes(newWaitingList.value[0].value.value['neg-votes'].value);
-        setNegativeVotesThreshold(newWaitingList.value[0].value.value['neg-thr'].value);
+        const newWaitingListNegative = cvToJSON(waitingList.newResultListNegative[0]);
+        const newWaitingListPositive = cvToJSON(waitingList.newResultListPositive[0]);
+
+        setPositiveVotes(newWaitingListPositive.value[0].value.value['pos-votes'].value);
+        setPositiveVotesThreshold(newWaitingListPositive.value[0].value.value['pos-thr'].value);
+        setNegativeVotes(newWaitingListNegative.value[0].value.value['neg-votes'].value);
+        setNegativeVotesThreshold(newWaitingListNegative.value[0].value.value['neg-thr'].value);
       };
       fetchData();
     }
-  }, [positiveVotes, positiveVotesThreshold, negativeVotes, negativeVotesThreshold]);
+  }, [address, status]);
 
   useEffect(() => {
     if (address !== null) {

@@ -52,13 +52,14 @@ export const readOnlyAddressStatus = async (args: string) => {
     : 'NormalUser';
 };
 
-// get-all-data-waiting-miners
+// get-data-waiting-miners-positive-votes && get-data-waiting-miners-negative-votes
 // args: (waiting-miners-list (list 100 principal))
 // what does it do: it returns the details for every miner in the waiting list passed as argument
-// return: address, positive votes and threshold, negative votes and threshold, was blacklisted
+// return: positive votes and threshold, negative votes and threshold
 
 export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue) => {
-  const newResultList: ClarityValue[] = [];
+  const newResultListPositive: ClarityValue[] = [];
+  const newResultListNegative: ClarityValue[] = [];
   const newAddressList: ClarityValue[] = [];
   const step = 1;
 
@@ -68,14 +69,16 @@ export const ReadOnlyAllDataWaitingMiners = async (fullWaitingList: ClarityValue
     currentIndex = currentIndex + step
   ) {
     const newWaitingList = fromResultToList(fullWaitingList, currentIndex, currentIndex + step);
-    const newResult = await ReadOnlyFunctions([newWaitingList], 'get-all-data-waiting-miners');
+    const newResultPositive = await ReadOnlyFunctions([newWaitingList], 'get-data-waiting-miners-positive-votes');
+    const newResultNegative = await ReadOnlyFunctions([newWaitingList], 'get-data-waiting-miners-negative-votes');
 
-    if (newResult) {
+    if (newResultPositive && newResultNegative) {
       newAddressList.push(newWaitingList);
-      newResultList.push(newResult);
+      newResultListPositive.push(newResultPositive);
+      newResultListNegative.push(newResultNegative);
     }
   }
-  return { newResultList, newAddressList };
+  return { newResultListPositive, newResultListNegative, newAddressList };
 };
 
 // get-proposed-removal-list

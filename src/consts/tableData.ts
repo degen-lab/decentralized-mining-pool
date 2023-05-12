@@ -77,29 +77,32 @@ export const waitingColumns: WaitingColumnData[] = [
 ];
 
 export const GetWaitingRows = () => {
-  const [waitingList, setWaitingList] = useState<any>([]);
+  const [waitingListPositive, setWaitingListPositive] = useState<any>([]);
+  const [waitingListNegative, setWaitingListNegative] = useState<any>([]);
   const [addressList, setAddressList] = useState<any>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const fullWaitingList = await ReadOnlyGetWaitingList();
       const newWaitingList = await ReadOnlyAllDataWaitingMiners(fullWaitingList);
-      setWaitingList(newWaitingList.newResultList);
+      setWaitingListPositive(newWaitingList.newResultListPositive);
+      setWaitingListNegative(newWaitingList.newResultListNegative);
       setAddressList(newWaitingList.newAddressList);
     };
     fetchData();
   }, []);
 
   const rows =
-    waitingList.length !== 0
-      ? waitingList.map((miner: ClarityValue, index: number) => {
-          const waitingValue = cvToJSON(miner).value[0].value.value;
+    waitingListPositive.length !== 0
+      ? waitingListPositive.map((miner: ClarityValue, index: number) => {
+          const waitingValuePositive = cvToJSON(miner).value[0].value.value;
+          const waitingValueNegative = cvToJSON(waitingListNegative[index]).value[0].value.value;
           const waitingAddress = cvToJSON(addressList[index]).value[0].value;
           return createWaitingData(
             index,
             waitingAddress,
-            waitingValue['neg-votes'].value + '/' + waitingValue['neg-thr'].value,
-            waitingValue['pos-votes'].value + '/' + waitingValue['pos-thr'].value
+            waitingValueNegative['neg-votes'].value + '/' + waitingValueNegative['neg-thr'].value,
+            waitingValuePositive['pos-votes'].value + '/' + waitingValuePositive['pos-thr'].value
           );
         })
       : [];
