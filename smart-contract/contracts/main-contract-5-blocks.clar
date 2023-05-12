@@ -42,7 +42,8 @@
 (define-constant err-already-distributed (err u1003))
 (define-constant err-cant-unwrap-rewarded-block (err u1004))
 
-(define-constant notifier-election-blocks-to-pass u144)
+;;TODO: change this back to 144
+(define-constant notifier-election-blocks-to-pass u5)
 (define-constant blocks-to-pass u5)
 
 (define-map balance principal uint)
@@ -657,7 +658,8 @@
 (define-public (end-vote-notifier) 
 (begin 
   (asserts! (>= block-height (var-get notifier-vote-end-block)) err-voting-still-active)
-  (get-max-votes-number-notifier)
+  (unwrap! (get-max-votes-number-notifier) (err u99999))
+  (asserts! false (err u12345))
   (if (> (var-get max-votes-notifier) (/ (var-get k) u2)) 
     (var-set notifier (var-get max-voted-proposed-notifier))
     false)
@@ -666,10 +668,10 @@
   (ok true)))
 
 (define-private (get-max-votes-number-notifier) 
-(map compare-votes-number-notifier (var-get miners-list)))
+(ok (map compare-votes-number-notifier (var-get miners-list))))
 
 (define-private (compare-votes-number-notifier (proposed-notifier principal)) 
-(if (is-some (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))
+(ok (if (is-some (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))
 (if (> (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier}))) (var-get max-votes-notifier)) 
   (begin 
     (var-set max-votes-notifier (unwrap-panic (get votes-number (map-get? map-votes-notifier {voted-notifier: proposed-notifier})))) 
@@ -683,7 +685,7 @@
           (var-set max-voted-proposed-notifier proposed-notifier))
       false)
   false))
-  false))
+  false)))
 
 (define-private (delete-all-notifier-entries) 
 (begin 
