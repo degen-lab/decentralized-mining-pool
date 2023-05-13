@@ -34,15 +34,12 @@ const ReadOnlyFunctions = async (function_args: ClarityValue[], contractFunction
 // return: 'Miner', 'Waiting', 'Pending', or 'Not Asked to Join'
 
 export const readOnlyAddressStatus = async (args: string) => {
-  // const isUserLogged = userSession.isUserSignedIn() ? 'yes' : 'no';
   const statusArgs = convertPrincipalToArg(args);
 
   const status = await ReadOnlyFunctions([statusArgs], 'get-address-status');
-  // isUserLogged === 'yes'
-  //   ? await ReadOnlyFunctions([statusArgs], 'get-address-status')
-  //   : { value: { data: 'is-none' } };
 
-  const statusInfo = (status as any).value.data;
+  const statusInfo = cvToJSON(status).value.value;
+
   return statusInfo === 'is-miner'
     ? 'Miner'
     : statusInfo === 'is-waiting'
@@ -93,9 +90,22 @@ export const ReadOnlyGetProposedRemovalList = async () => {
 // what does it do: it returns the details for every miner in the list for miners proposed for removal, passed as argument
 // return: address, positive votes and threshold, negative votes and threshold
 
+interface RemovalsListProps {
+  value: {
+    value: {
+      value: {
+        'neg-thr': { value: string };
+        'pos-thr': { value: string };
+        'vts-against': { value: string };
+        'vts-for': { value: string };
+      };
+    };
+  }[];
+}
+
 export const ReadOnlyAllDataProposedRemovalMiners = async () => {
-  const newResultList: ClarityValue[] = [];
-  const newAddressList: ClarityValue[] = [];
+  const newResultList: RemovalsListProps[] = [];
+  const newAddressList: { value: { type: string; value: string }[] }[] = [];
   const fullRemovalsList: ClarityValue = await ReadOnlyGetProposedRemovalList();
   const step = 1;
 
@@ -199,7 +209,9 @@ export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: Cla
 // args: (given-block-height uint)
 // what does it do: true/false if rewards on the block were claimed
 // return: true or false
-export const readOnlyClaimedBlockStatus = async (blockHeight: any) => {
+export const readOnlyClaimedBlockStatus = async (
+  blockHeight: any // the type might be number, needs implementation later
+) => {
   const test = await ReadOnlyFunctions([], 'was-block-claimed');
   console.log('TEST', test);
 };
@@ -208,7 +220,9 @@ export const readOnlyClaimedBlockStatus = async (blockHeight: any) => {
 // args: (local-miners-list (list 100 principal))
 // what does it do: returns the stx balance for every miner in the arg list
 // return: address, balance for the address
-export const readOnlyGetMinersBalanceData = async (localMinersList: any) => {
+export const readOnlyGetMinersBalanceData = async (
+  localMinersList: any // the type may be ClarityValue, see when implement
+) => {
   const test = await ReadOnlyFunctions([], 'get-all-data-balance-miners');
   console.log('TEST', test);
 };
@@ -227,7 +241,9 @@ export const readOnlyGetBalance = async (principalAddress: string) => {
 // args: (address principal)
 // what does it do: ?
 // return: ?
-export const readOnlyGetPrincipalsList = async (principalAddress: any) => {
+export const readOnlyGetPrincipalsList = async (
+  principalAddress: any // the type can be either ClarityValue, or string
+) => {
   const test = await ReadOnlyFunctions([], 'get-principals-list');
   console.log('TEST', test);
 };

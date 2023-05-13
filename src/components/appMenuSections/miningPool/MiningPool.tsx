@@ -8,7 +8,7 @@ import Button from '@mui/material/Button';
 import TableCreation from '../../../components/TableCreation';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
-import { GetMinersRows, minerColumns, MinersData } from '../../../consts/tableData';
+import { AllTableData, GetMinersRows, minerColumns } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
 
 const MiningPool = () => {
@@ -16,15 +16,19 @@ const MiningPool = () => {
   const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
 
-  const handleMinerRemoveButtonClick = (address: string) => {
-    ContractProposeRemoval(address);
+  const handleMinerRemoveButtonClick = (address: string | undefined) => {
+    if (address !== undefined) {
+      ContractProposeRemoval(address);
+    }
   };
 
-  const handleMinerInfoButtonClick = async (address: string) => {
-    navigate(`/profile/${address}`);
+  const handleMinerInfoButtonClick = async (address: string | undefined) => {
+    if (address !== undefined) {
+      navigate(`/profile/${address}`);
+    }
   };
 
-  const minersRowContent = (_index: number, minersRow: MinersData) => {
+  const minersRowContent = (_index: number, minersRow: AllTableData) => {
     return (
       <React.Fragment>
         {minerColumns.map((column) => (

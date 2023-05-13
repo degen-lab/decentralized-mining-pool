@@ -14,7 +14,7 @@ import useCurrentTheme from '../consts/theme';
 import colors from '../consts/colorPallete';
 import { AllTableData } from '../consts/tableData';
 
-const VirtuosoTableComponents: TableComponents<any> = {
+const VirtuosoTableComponents: TableComponents<any /*don't know the type here*/> = {
   Scroller: React.forwardRef<HTMLDivElement>((props, ref) => <TableContainer component={Paper} {...props} ref={ref} />),
   Table: (props) => <Table {...props} sx={{ borderCollapse: 'separate', tableLayout: 'fixed' }} />,
   TableHead,
@@ -114,11 +114,14 @@ const TableCreation = ({ rows, rowContent, columns, tableId, customTableWidth }:
     sortedRows.sort((rowA, rowB) => {
       const valueA = rowA[sortedColumn];
       const valueB = rowB[sortedColumn];
-      if (sortDirection === 'asc') {
-        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-      } else {
-        return valueB < valueA ? -1 : valueB > valueA ? 1 : 0;
+      if (valueA !== undefined && valueB !== undefined) {
+        if (sortDirection === 'asc') {
+          return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+        } else {
+          return valueB < valueA ? -1 : valueB > valueA ? 1 : 0;
+        }
       }
+      return 0;
     });
     return sortedRows;
   }, [rows, sortedColumn, sortDirection]);

@@ -1,4 +1,3 @@
-import { AppConfig } from '@stacks/connect';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import colors from '../consts/colorPallete';

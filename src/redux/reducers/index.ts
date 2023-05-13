@@ -13,7 +13,7 @@ const initialState: IinitialState = {
 
 interface IreduxAction {
   type: string;
-  payload?: any;
+  payload?: any; // know the type?
 }
 
 const mainReducer = (state = initialState, action: IreduxAction) => {

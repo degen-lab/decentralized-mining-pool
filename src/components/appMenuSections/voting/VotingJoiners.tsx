@@ -9,7 +9,7 @@ import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import Button from '@mui/material/Button';
 import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../../components/TableCreation';
-import { WaitingData, waitingColumns, GetWaitingRows } from '../../../consts/tableData';
+import { waitingColumns, GetWaitingRows, AllTableData } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
 
 const VotingJoiners = () => {
@@ -17,19 +17,23 @@ const VotingJoiners = () => {
   const waitingRows = GetWaitingRows();
   const navigate = useNavigate();
 
-  const handlePendingVoteButtonClick = (data: string, address: string) => {
-    if (data === 'voteYes') {
-      ContractVotePositiveJoin(address);
-    } else if (data === 'voteNo') {
-      ContractVoteNegativeJoin(address);
+  const handlePendingVoteButtonClick = (data: string, address: string | undefined) => {
+    if (address !== undefined) {
+      if (data === 'voteYes') {
+        ContractVotePositiveJoin(address);
+      } else if (data === 'voteNo') {
+        ContractVoteNegativeJoin(address);
+      }
     }
   };
 
-  const handleMinerInfoButtonClick = (address: string) => {
-    navigate(`/profile/${address}`);
+  const handleMinerInfoButtonClick = (address: string | undefined) => {
+    if (address !== undefined) {
+      navigate(`/profile/${address}`);
+    }
   };
 
-  const waitingRowContent = (_index: number, waitingRow: WaitingData) => {
+  const waitingRowContent = (_index: number, waitingRow: AllTableData) => {
     return (
       <React.Fragment>
         {waitingColumns.map((column) => (

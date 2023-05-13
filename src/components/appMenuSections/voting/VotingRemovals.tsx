@@ -9,7 +9,7 @@ import ThumbDownAltIcon from '@mui/icons-material/ThumbDownAlt';
 import InfoIcon from '@mui/icons-material/Info';
 import Button from '@mui/material/Button';
 import TableCreation from '../../../components/TableCreation';
-import { removalsColumns, GetRemovalsRows, RemovalsData } from '../../../consts/tableData';
+import { removalsColumns, GetRemovalsRows, AllTableData } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
 
 const VotingRemovals = () => {
@@ -17,19 +17,23 @@ const VotingRemovals = () => {
   const removalsRows = GetRemovalsRows();
   const navigate = useNavigate();
 
-  const handleRemovalVoteButtonClick = (data: string, address: string) => {
-    if (data === 'voteYes') {
-      ContractVotePositiveRemove(address);
-    } else if (data === 'voteNo') {
-      ContractVoteNegativeRemove(address);
+  const handleRemovalVoteButtonClick = (data: string, address: string | undefined) => {
+    if (address !== undefined) {
+      if (data === 'voteYes') {
+        ContractVotePositiveRemove(address);
+      } else if (data === 'voteNo') {
+        ContractVoteNegativeRemove(address);
+      }
     }
   };
 
-  const handleMinerInfoButtonClick = (address: string) => {
-    navigate(`/profile/${address}`);
+  const handleMinerInfoButtonClick = (address: string | undefined) => {
+    if (address !== undefined) {
+      navigate(`/profile/${address}`);
+    }
   };
 
-  const removalsRowContent = (_index: number, removalsRow: RemovalsData) => {
+  const removalsRowContent = (_index: number, removalsRow: AllTableData) => {
     return (
       <React.Fragment>
         {removalsColumns.map((column) => (

@@ -11,7 +11,7 @@ import '../style.css';
 import colors from '../../../consts/colorPallete';
 import useCurrentTheme from '../../../consts/theme';
 import { Alert, Box, TextField } from '@mui/material';
-import { useAppDispatch, useAppSelector } from '../../../redux/store';
+import { useAppSelector } from '../../../redux/store';
 import {
   ContractChangeBtcAddress,
   ContractClaimRewardsForBlock,

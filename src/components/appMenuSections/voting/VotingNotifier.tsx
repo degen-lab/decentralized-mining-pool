@@ -13,7 +13,7 @@ import { useAppSelector } from '../../../redux/store';
 import { selectUserSessionState } from '../../../redux/reducers/user-state';
 import { ContractStartVoteNotifier, ContractVoteForNotifier } from '../../../consts/smartContractFunctions';
 import { principalCV, listCV } from '@stacks/transactions';
-import { GetNotifiersRows, NotifiersData, notifierColumns } from '../../../consts/tableData';
+import { AllTableData, GetNotifiersRows, notifierColumns } from '../../../consts/tableData';
 import React from 'react';
 import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../TableCreation';
@@ -25,21 +25,25 @@ const VotingNotifier = () => {
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [electionBlocksRemaining, setElectionBlocksRemaining] = useState<number | null>(null);
   const [currentNotifier, setCurrentNotifier] = useState<string | null>(null);
-  const [notifierVoteStatus, setNotifierVoteStatus] = useState<any>(null);
+  const [notifierVoteStatus, setNotifierVoteStatus] = useState<boolean | null>(null);
   const [votedNotifier, setVotedNotifier] = useState<string | null>(null);
   const userSession = useAppSelector(selectUserSessionState);
-  const [notifiersRows, setNotifiersRows] = useState<any>([]);
+  const [notifiersRows, setNotifiersRows] = useState<{ id: number; address: string; notifierVotes: string }[]>([]);
   const navigate = useNavigate();
 
-  const handleMinerInfoButtonClick = (address: string) => {
-    navigate(`/profile/${address}`);
+  const handleMinerInfoButtonClick = (address: string | undefined) => {
+    if (address !== undefined) {
+      navigate(`/profile/${address}`);
+    }
   };
 
-  const handlePendingVoteButtonClick = (address: string) => {
-    ContractVoteForNotifier(address);
+  const handlePendingVoteButtonClick = (address: string | undefined) => {
+    if (address !== undefined) {
+      ContractVoteForNotifier(address);
+    }
   };
 
-  const notifiersRowContent = (_index: number, notifiersRow: NotifiersData) => {
+  const notifiersRowContent = (_index: number, notifiersRow: AllTableData) => {
     return (
       <React.Fragment>
         {notifierColumns.map((column) => (
@@ -75,7 +79,7 @@ const VotingNotifier = () => {
     );
   };
 
-  const [minersList, setMinersList] = useState<any>([]);
+  const [minersList, setMinersList] = useState<{ type: string; value: string }[]>([]);
   const [notifierVoteThreshold, setNotifierVoteThreshold] = useState<number | null>(null);
   const [fetchedMinerList, setFetchedMinerList] = useState<boolean>(false);
   const [fetchedVotesThreshold, setFetchedVotesThreshold] = useState<boolean>(false);

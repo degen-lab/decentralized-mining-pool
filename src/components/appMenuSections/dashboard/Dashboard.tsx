@@ -71,12 +71,13 @@ const Dashboard = () => {
   useEffect(() => {
     const getMinersList = async () => {
       const { value } = await ReadOnlyGetMinersList();
-      const parsedMinersList = value.length !== 0 ? value.map((miner: any) => miner.value) : [];
+      const parsedMinersList =
+        value.length !== 0 ? value.map((miner: { type: string; value: string }) => miner.value) : [];
       setMinersList(parsedMinersList);
     };
 
     getMinersList();
-  }, [minersList]);
+  }, []);
 
   useEffect(() => {
     if (currentRole === 'Viewer') {
