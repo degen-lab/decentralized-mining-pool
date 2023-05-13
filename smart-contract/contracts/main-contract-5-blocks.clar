@@ -107,62 +107,64 @@
 
 ;; READ ONLY FE UTILS
 
-;; waiting miners 
+;; waiting miners
 
 (define-read-only (get-all-data-waiting-miners (waiting-miners-list (list 100 principal))) 
-(map get-data-waiting-miner waiting-miners-list))
+(map get-all-data-waiting-miner waiting-miners-list))
 
-(define-private (get-data-waiting-miner (miner principal))
-(begin 
-  (asserts! (is-some (get value (map-get? map-is-waiting {address: miner}))) err-not-waiting)
-  (ok 
-    {
-      pos-votes: 
-        (default-to u0 (get value (map-get? map-votes-accept-join {address: miner}))),
-      neg-votes:
-        (default-to u0 (get value (map-get? map-votes-reject-join {address: miner}))),
-      pos-thr: 
-        (if 
-          (is-eq (unwrap-panic (get-k-at-block-asked-to-join miner)) u0) 
-          u1 
-          (unwrap-panic (get-k-at-block-asked-to-join miner))),
-      neg-thr: 
-        (if   
-          (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u1) 
-          u1 
+(define-private (get-all-data-waiting-miner (miner principal))
+(let ((k-at-block-asked-to-join (unwrap-panic (get-k-at-block-asked-to-join miner)))
+      (n-at-block-asked-to-join (unwrap-panic (get-n-at-block-asked-to-join miner))))
+  (begin 
+    (asserts! (is-some (get value (map-get? map-is-waiting {address: miner}))) err-not-waiting)
+    (ok 
+      {
+        pos-votes: 
+          (default-to u0 (get value (map-get? map-votes-accept-join {address: miner}))),
+        pos-thr: 
           (if 
-            (is-eq (unwrap-panic (get-n-at-block-asked-to-join miner)) u2) 
-            u2 
-            (+ (- (unwrap-panic (get-n-at-block-asked-to-join miner)) (unwrap-panic (get-k-at-block-asked-to-join miner))) u1))),
-    })))
+            (is-eq k-at-block-asked-to-join u0) 
+            u1 
+            k-at-block-asked-to-join),
+        neg-votes:
+          (default-to u0 (get value (map-get? map-votes-reject-join {address: miner}))),
+        neg-thr: 
+          (if   
+            (is-eq n-at-block-asked-to-join u1) 
+            u1 
+            (if 
+              (is-eq n-at-block-asked-to-join u2) 
+              u2 
+              (+ (- n-at-block-asked-to-join k-at-block-asked-to-join) u1)))}))))
 
-;; proposed for removal miners
+;; miners proposed for removal
 
 (define-read-only (get-all-data-miners-proposed-for-removal (removal-miners-list (list 100 principal))) 
-(map get-data-miner-proposed-for-removal removal-miners-list))
+(map get-all-data-miner-proposed-for-removal removal-miners-list))
 
-(define-private (get-data-miner-proposed-for-removal (miner principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-is-proposed-for-removal {address: miner}))) err-not-pending)
-  (ok 
-    {
-      vts-for: 
-        (default-to u0 (get value (map-get? map-votes-accept-removal {address: miner}))),
-      vts-against: 
-        (default-to u0 (get value (map-get? map-votes-reject-removal {address: miner}))),
-      pos-thr: 
-        (if 
-          (is-eq (unwrap-panic (get-k-at-block-proposed-removal miner)) u0) 
-          u1 
-          (unwrap-panic (get-k-at-block-proposed-removal miner))),
-      neg-thr: 
-        (if   
-          (is-eq (unwrap-panic (get-n-at-block-proposed-removal miner)) u2) 
-          u1 
-          (if (is-eq (unwrap-panic (get-n-at-block-proposed-removal miner)) u3) 
-            u2 
-            (+ (- (unwrap-panic (get-n-at-block-proposed-removal miner)) (unwrap-panic (get-k-at-block-proposed-removal miner))) u1)))
-    })))
+(define-private (get-all-data-miner-proposed-for-removal (miner principal)) 
+(let ((k-at-block-proposed-removal (unwrap-panic (get-k-at-block-proposed-removal miner)))
+      (n-at-block-proposed-removal (unwrap-panic (get-n-at-block-proposed-removal miner))))
+  (begin 
+    (asserts! (is-some (get value (map-get? map-is-proposed-for-removal {address: miner}))) err-not-pending)
+    (ok 
+      {
+        vts-for: 
+          (default-to u0 (get value (map-get? map-votes-accept-removal {address: miner}))),
+        pos-thr: 
+          (if 
+            (is-eq k-at-block-proposed-removal u0) 
+            u1 
+            k-at-block-proposed-removal),
+        vts-against: 
+          (default-to u0 (get value (map-get? map-votes-reject-removal {address: miner}))),
+        neg-thr: 
+          (if   
+            (is-eq n-at-block-proposed-removal u2) 
+            u1 
+            (if (is-eq n-at-block-proposed-removal u3) 
+              u2 
+              (+ (- n-at-block-proposed-removal k-at-block-proposed-removal) u1)))}))))
 
 ;; pending accept miners
 
@@ -452,36 +454,38 @@
   true
   false))
 
-(define-private (get-k-at-block-asked-to-join (miner-to-vote principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))) err-not-asked-to-join)
-  (if 
-    (is-eq 
-      (unwrap-panic (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))) 
-      block-height) 
-    (ok (var-get k)) 
-    (at-block 
-    (unwrap-panic 
-      (get-block-info? id-header-hash 
-        (unwrap-panic 
-          (get value 
-            (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
-            (ok (var-get k))))))
+(define-private (get-k-at-block-asked-to-join (miner-to-vote principal))
+(let ((block-asked-to-join (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))))
+  (begin 
+    (asserts! (is-some block-asked-to-join) err-not-asked-to-join)
+    (if 
+      (is-eq 
+        (unwrap-panic block-asked-to-join) 
+        block-height) 
+      (ok (var-get k)) 
+      (at-block 
+      (unwrap-panic 
+        (get-block-info? id-header-hash 
+          (unwrap-panic 
+            (get value 
+              (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
+              (ok (var-get k)))))))
 
 (define-private (get-n-at-block-asked-to-join (miner-to-vote principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))) err-not-asked-to-join)
-  (if 
-    (is-eq 
-      (unwrap-panic (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))) block-height) 
-    (ok (var-get n)) 
-    (at-block  
-    (unwrap-panic 
-      (get-block-info? id-header-hash 
-        (unwrap-panic 
-          (get value 
-            (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
-            (ok (var-get n))))))
+(let ((block-asked-to-join (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))))
+  (begin 
+    (asserts! (is-some block-asked-to-join) err-not-asked-to-join)
+    (if 
+      (is-eq 
+        (unwrap-panic block-asked-to-join) block-height) 
+      (ok (var-get n)) 
+      (at-block  
+      (unwrap-panic 
+        (get-block-info? id-header-hash 
+          (unwrap-panic 
+            (get value 
+              (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
+              (ok (var-get n)))))))
 
 ;; LEAVING FLOW
 
@@ -606,36 +610,38 @@
   false))
 
 (define-private (get-k-at-block-proposed-removal (miner-to-vote principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote}))) err-not-proposed-for-removal)
-  (if 
-    (is-eq (unwrap-panic 
-      (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote}))) 
-      block-height) 
-    (ok (var-get k)) 
-    (at-block 
-      (unwrap-panic 
-        (get-block-info? id-header-hash 
-          (unwrap-panic 
-            (get value 
-              (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
-              (ok (var-get k))))))
+(let ((block-proposed-to-remove (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))
+  (begin 
+    (asserts! (is-some block-proposed-to-remove) err-not-proposed-for-removal)
+    (if 
+      (is-eq (unwrap-panic 
+        block-proposed-to-remove) 
+        block-height) 
+      (ok (var-get k)) 
+      (at-block 
+        (unwrap-panic 
+          (get-block-info? id-header-hash 
+            (unwrap-panic 
+              (get value 
+                (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
+                (ok (var-get k)))))))
 
-(define-private (get-n-at-block-proposed-removal (miner-to-vote principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote}))) err-not-proposed-for-removal)
-  (if 
-    (is-eq (unwrap-panic 
-      (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote}))) 
-      block-height) 
-    (ok (var-get n)) 
-    (at-block 
-      (unwrap-panic 
-        (get-block-info? id-header-hash 
-          (unwrap-panic 
-            (get value 
-              (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
-              (ok (var-get n))))))
+(define-private (get-n-at-block-proposed-removal (miner-to-vote principal))
+(let ((block-proposed-to-remove (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote})))) 
+  (begin 
+    (asserts! (is-some block-proposed-to-remove) err-not-proposed-for-removal)
+    (if 
+      (is-eq (unwrap-panic 
+        block-proposed-to-remove) 
+        block-height) 
+      (ok (var-get n)) 
+      (at-block 
+        (unwrap-panic 
+          (get-block-info? id-header-hash 
+            (unwrap-panic 
+              (get value 
+                (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
+                (ok (var-get n)))))))
 
 ;; UPDATE NOTIFIER
 
