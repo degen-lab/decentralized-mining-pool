@@ -52,17 +52,15 @@ const Voting = () => {
     if (status === 'Waiting') {
       const fetchData = async () => {
         const waitingList = await ReadOnlyAllDataWaitingMiners(listCV([principalCV(address)]));
-        const newWaitingListNegative = cvToJSON(waitingList.newResultListNegative[0]);
-        const newWaitingListPositive = cvToJSON(waitingList.newResultListPositive[0]);
-
-        setPositiveVotes(newWaitingListPositive.value[0].value.value['pos-votes'].value);
-        setPositiveVotesThreshold(newWaitingListPositive.value[0].value.value['pos-thr'].value);
-        setNegativeVotes(newWaitingListNegative.value[0].value.value['neg-votes'].value);
-        setNegativeVotesThreshold(newWaitingListNegative.value[0].value.value['neg-thr'].value);
+        const newWaitingList = cvToJSON(waitingList.newResultList[0]);
+        setPositiveVotes(newWaitingList.value[0].value.value['pos-votes'].value);
+        setPositiveVotesThreshold(newWaitingList.value[0].value.value['pos-thr'].value);
+        setNegativeVotes(newWaitingList.value[0].value.value['neg-votes'].value);
+        setNegativeVotesThreshold(newWaitingList.value[0].value.value['neg-thr'].value);
       };
       fetchData();
     }
-  }, [address, status]);
+  }, [status, address]);
 
   useEffect(() => {
     if (address !== null) {
@@ -133,7 +131,7 @@ const Voting = () => {
           <li>Status: {status === 'NormalUser' ? 'Not Asked To Join Yet' : status}</li>
           {status === 'Waiting' && (
             <li>
-              positive votes for me:{' '}
+              positive votes for this address:{' '}
               {positiveVotes !== null && positiveVotesThreshold !== null
                 ? positiveVotes + '/' + positiveVotesThreshold
                 : '0'}
@@ -141,7 +139,7 @@ const Voting = () => {
           )}
           {status === 'Waiting' && (
             <li>
-              negative votes for me:{' '}
+              negative votes for this address:{' '}
               {negativeVotes !== null && negativeVotesThreshold !== null
                 ? negativeVotes + '/' + negativeVotesThreshold
                 : '0'}
