@@ -466,10 +466,8 @@
       (at-block 
       (unwrap-panic 
         (get-block-info? id-header-hash 
-          (unwrap-panic 
-            (get value 
-              (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
-              (ok (var-get k)))))))
+          (unwrap-panic block-asked-to-join))) 
+            (ok (var-get k)))))))
 
 (define-private (get-n-at-block-asked-to-join (miner-to-vote principal)) 
 (let ((block-asked-to-join (get value (map-get? map-block-asked-to-join {address: miner-to-vote}))))
@@ -482,10 +480,8 @@
       (at-block  
       (unwrap-panic 
         (get-block-info? id-header-hash 
-          (unwrap-panic 
-            (get value 
-              (map-get? map-block-asked-to-join {address: miner-to-vote}))))) 
-              (ok (var-get n)))))))
+          (unwrap-panic block-asked-to-join))) 
+            (ok (var-get n)))))))
 
 ;; LEAVING FLOW
 
@@ -621,10 +617,8 @@
       (at-block 
         (unwrap-panic 
           (get-block-info? id-header-hash 
-            (unwrap-panic 
-              (get value 
-                (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
-                (ok (var-get k)))))))
+            (unwrap-panic block-proposed-to-remove))) 
+              (ok (var-get k)))))))
 
 (define-private (get-n-at-block-proposed-removal (miner-to-vote principal))
 (let ((block-proposed-to-remove (get value (map-get? map-block-proposed-to-remove {address: miner-to-vote})))) 
@@ -638,10 +632,8 @@
       (at-block 
         (unwrap-panic 
           (get-block-info? id-header-hash 
-            (unwrap-panic 
-              (get value 
-                (map-get? map-block-proposed-to-remove {address: miner-to-vote}))))) 
-                (ok (var-get n)))))))
+            (unwrap-panic block-proposed-to-remove))) 
+              (ok (var-get n)))))))
 
 ;; UPDATE NOTIFIER
 
