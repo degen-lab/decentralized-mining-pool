@@ -5,6 +5,7 @@ import {
   readOnlyGetBalance,
   readOnlyGetNotifier,
   readOnlyGetAllTotalWithdrawals,
+  readOnlyClaimedBlockStatus,
 } from '../../../consts/readOnly';
 import { selectCurrentUserRole, selectUserSessionState } from '../../../redux/reducers/user-state';
 import '../style.css';
@@ -14,7 +15,7 @@ import { Alert, Box, TextField } from '@mui/material';
 import { useAppSelector } from '../../../redux/store';
 import {
   ContractChangeBtcAddress,
-  ContractClaimRewardsForBlock,
+  ContractRewardDistribution,
   ContractDepositSTX,
   ContractLeavePool,
   ContractWithdrawSTX,
@@ -61,9 +62,14 @@ const MinerProfile = ({ connectedWallet, explorerLink }: IMinerProfileProps) => 
     }
   };
 
-  const claimRewards = () => {
+  const claimRewards = async () => {
     if (claimRewardsInputAmount !== null) {
-      ContractClaimRewardsForBlock(claimRewardsInputAmount);
+      const wasBlockClaimed = await readOnlyClaimedBlockStatus(claimRewardsInputAmount);
+      if (wasBlockClaimed === false) {
+        ContractRewardDistribution(claimRewardsInputAmount);
+      } else {
+        console.log('Block already claimed');
+      }
     }
   };
 

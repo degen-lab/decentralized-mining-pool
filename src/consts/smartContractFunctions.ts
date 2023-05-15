@@ -113,19 +113,25 @@ export const ContractDepositSTX = (amount: number, userAddress: string) => {
   const postConditions = createPostConditionSTXTransferToContract(userAddress, amount * 1000000);
   CallFunctions(convertedArgs, 'deposit-stx', [postConditions]);
 };
-//
+
 // withdraw-stx
 // args: (amount uint)
 // what does it do: withdraws stx from user's account
+
 export const ContractWithdrawSTX = (amount: number) => {
   const convertedArgs = [uintCV(amount * 1000000)];
   const postConditions = createPostConditionSTXTransferFromContract(amount * 1000000);
   CallFunctions(convertedArgs, 'withdraw-stx', [postConditions]);
 };
-//
+
 // reward-distribution
 // args: (block-number uint)
 // what does it do: distributes rewards for a given block
+
+export const ContractRewardDistribution = (blockHeight: number) => {
+  const convertedArgs = [uintCV(blockHeight)];
+  CallFunctions(convertedArgs, 'reward-distribution', []);
+};
 
 // add-pending-miners-to-pool
 // args: none
@@ -138,7 +144,7 @@ export const ContractAddPending = () => {
 // leave-pool
 // args: none
 // what does it do: makes the user leave the mining pool
-//
+
 export const ContractLeavePool = () => {
   CallFunctions([], 'leave-pool', []);
 };
@@ -173,6 +179,7 @@ export const ContractVoteNegativeRemove = (args: string) => {
 // start-vote-notifier
 // args: none
 // what does it do: starts the vote to elect a notifier
+
 export const ContractStartVoteNotifier = () => {
   CallFunctions([], 'start-vote-notifier', []);
 };
@@ -198,24 +205,24 @@ export const ContractVoteForNotifier = (votedNotifier: string) => {
 // args: (miner principal)
 // what does it do: warns the user passed as argument
 
-//change btc address
-//set-my-btc-address
+export const ContractWarnMiner = (warnedMiner: string) => {
+  const convertedArgs = [convertPrincipalToArg(warnedMiner)];
+  CallFunctions(convertedArgs, 'warn-miner', []);
+};
+
+// set-my-btc-address
+// args: (new-btc-address  (string-ascii 42))
+// what does it do: changed the btc address to the one given as arg
+
 export const ContractChangeBtcAddress = (args: string) => {
   const convertedArgs = [convertStringToArg(args)];
   CallFunctions(convertedArgs, 'set-my-btc-address', []);
 };
 
-//claim-rewards-for-block
-//reward-distribution
-export const ContractClaimRewardsForBlock = (amount: number) => {
-  const convertedArgs = [uintCV(amount)];
-  // const
-  CallFunctions(convertedArgs, 'reward-distribution', []);
-};
-
 // set-auto-exchange
 // args: bool value
 // what does it do: switches the state of auto-exchange to the given value
+
 export const ContractSetAutoExchange = (value: boolean) => {
   const convertedArgs = [boolCV(value)];
   CallFunctions(convertedArgs, 'set-auto-exchange', []);

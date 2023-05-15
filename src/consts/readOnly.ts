@@ -1,7 +1,7 @@
 import { StacksMocknet, StacksMainnet, StacksTestnet } from '@stacks/network';
 import { network } from './network';
 import { contractMapping } from './contract';
-import { callReadOnlyFunction, ClarityValue, ListCV, listCV, cvToJSON } from '@stacks/transactions';
+import { callReadOnlyFunction, ClarityValue, ListCV, listCV, cvToJSON, uintCV } from '@stacks/transactions';
 import { convertPrincipalToArg, convertPrincipalToList, fromResultToList, convertCVToValue } from './converter';
 import { userSession } from '../redux/reducers/user-state';
 
@@ -129,6 +129,7 @@ export const ReadOnlyAllDataProposedRemovalMiners = async () => {
 // args: (pending-miners-list (list 100 principal))
 // what does it do: it returns the details for every miner that is in the pending list (given as arg)
 // return: address, remaining blocks until join
+
 export const readOnlyGetAllDataMinersPendingAccept = async () => {
   const newResultList: ClarityValue[] = [];
   const fullPendingList: ClarityValue = await readOnlyGetPendingAcceptList();
@@ -153,6 +154,7 @@ export const readOnlyGetAllDataMinersPendingAccept = async () => {
 // args: (local-miners-list (list 100 principal))
 // what does it do: it returns the details for every miner from arg list
 // return: address, blocks as miner, was blacklisted, warnings, balance, total withdrawals
+
 export const readOnlyGetAllDataMinersInPool = async (address: string) => {
   const convertedArgs = [convertPrincipalToList(address)];
   const minerData = await ReadOnlyFunctions(convertedArgs, 'get-all-data-miners-in-pool');
@@ -180,6 +182,7 @@ export const readOnlyGetAllDataMinersInPool = async (address: string) => {
 // args: none
 // what does it do: Gets the number of blocks left until a miner can accept the users that are in pending list
 // return: Remaining blocks, number
+
 export const readOnlyGetRemainingBlocksJoin = async () => {
   const blocksLeft = await ReadOnlyFunctions([], 'get-remaining-blocks-until-join');
   return Number(convertCVToValue(blocksLeft));
@@ -189,6 +192,7 @@ export const readOnlyGetRemainingBlocksJoin = async () => {
 // args: none
 // what does it do: returns notifier voting status and the blocks remaining until the end
 // return: vote status of the notifier, election blocks remaining
+
 export const readOnlyGetNotifierElectionProcessData = async () => {
   const notifierData = await ReadOnlyFunctions([], 'get-data-notifier-election-process');
   return cvToJSON(notifierData).value;
@@ -198,6 +202,7 @@ export const readOnlyGetNotifierElectionProcessData = async () => {
 // args: (voter-miners-list (list 100 principal))
 // what does it do: returns the miner and which notifier it voted for each miner
 // return: address, notifier which the users in arg list voted for
+
 export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: ClarityValue) => {
   const votedNotifier = await ReadOnlyFunctions([voterMinersList], 'get-all-data-notifier-voter-miners');
   return cvToJSON(votedNotifier).value[0].value.value === '133'
@@ -209,49 +214,29 @@ export const readOnlyGetAllDataNotifierVoterMiners = async (voterMinersList: Cla
 // args: (given-block-height uint)
 // what does it do: true/false if rewards on the block were claimed
 // return: true or false
-export const readOnlyClaimedBlockStatus = async (
-  blockHeight: any // the type might be number, needs implementation later
-) => {
-  const test = await ReadOnlyFunctions([], 'was-block-claimed');
-  console.log('TEST', test);
-};
 
-// get-all-data-balance-miners
-// args: (local-miners-list (list 100 principal))
-// what does it do: returns the stx balance for every miner in the arg list
-// return: address, balance for the address
-export const readOnlyGetMinersBalanceData = async (
-  localMinersList: any // the type may be ClarityValue, see when implement
-) => {
-  const test = await ReadOnlyFunctions([], 'get-all-data-balance-miners');
-  console.log('TEST', test);
+export const readOnlyClaimedBlockStatus = async (blockHeight: number) => {
+  const convertedArgs = [uintCV(blockHeight)];
+  const blockStatus = await ReadOnlyFunctions(convertedArgs, 'was-block-claimed');
+  return cvToJSON(blockStatus).value.value.value.value;
 };
 
 // get-balance
 // args: (address principal)
 // what does it do: returns balance for given address
 // return: balance
+
 export const readOnlyGetBalance = async (principalAddress: string) => {
   const balanceArgs = convertPrincipalToArg(principalAddress);
   const balance = await ReadOnlyFunctions([balanceArgs], 'get-balance');
   return cvToJSON(balance).value !== null ? Number(cvToJSON(balance).value.value) : 0;
 };
 
-// get-principals-list
-// args: (address principal)
-// what does it do: ?
-// return: ?
-export const readOnlyGetPrincipalsList = async (
-  principalAddress: any // the type can be either ClarityValue, or string
-) => {
-  const test = await ReadOnlyFunctions([], 'get-principals-list');
-  console.log('TEST', test);
-};
-
 // get-k
 // args: none
 // what does it do: threshold for notifier votes
 // return: number
+
 export const readOnlyGetK = async () => {
   const k = await ReadOnlyFunctions([], 'get-k');
   return Number(cvToJSON(k).value);
@@ -261,6 +246,7 @@ export const readOnlyGetK = async () => {
 // args: none
 // what does it do: returns the current notifier
 // return: address
+
 export const readOnlyGetNotifier = async () => {
   const currentNotifier = await ReadOnlyFunctions([], 'get-notifier');
   return cvToJSON(currentNotifier).value;
@@ -270,6 +256,7 @@ export const readOnlyGetNotifier = async () => {
 // args: none
 // what does it do: returns a list of miners that are in waiting list
 // return: waiting miners list
+
 export const ReadOnlyGetWaitingList = async () => {
   const waitingList: ClarityValue = await ReadOnlyFunctions([], 'get-waiting-list');
   return waitingList;
@@ -279,6 +266,7 @@ export const ReadOnlyGetWaitingList = async () => {
 // args: none
 // what does it do: returns a list of miners that are in pool
 // return: miners in pool list
+
 export const ReadOnlyGetMinersList = async () => {
   const minersList = cvToJSON(await ReadOnlyFunctions([], 'get-miners-list'));
   return minersList;
@@ -288,6 +276,7 @@ export const ReadOnlyGetMinersList = async () => {
 // args: none
 // what does it do: returns the list of users that are pending
 // return: list
+
 export const readOnlyGetPendingAcceptList = async () => {
   const pendingAccept = await ReadOnlyFunctions([], 'get-pending-accept-list');
   return pendingAccept;
@@ -297,39 +286,20 @@ export const readOnlyGetPendingAcceptList = async () => {
 // args: (voted-notifier principal)
 // what does it do: get the votes for a given notifier
 // return: votes, number
+
 export const readOnlyGetNotifierVoteNumber = async (address: string) => {
   const principal = [convertPrincipalToArg(address)];
   const votes = await ReadOnlyFunctions(principal, 'get-notifier-vote-number');
   return cvToJSON(votes).value === null ? 0 : Number(cvToJSON(votes).value.value);
 };
 
-// get-max-voted-notifier
-// args: none
-// what does it do: get the notifier with the most votes
-// return: address
-export const readOnlyGetNotifierMaxVoted = async () => {
-  const mostVotedNotifierAddress = await ReadOnlyFunctions([], 'get-max-voted-notifier');
-  console.log('TEST most voted notifier address', mostVotedNotifierAddress);
-  return mostVotedNotifierAddress;
-};
-
-// get-max-votes-notifier
-// args: none
-// what does it do: get the votes of the most voted notifier
-// return: votes, number
-export const readOnlyGetMaxVotesNotifier = async () => {
-  const maxVotesNotifier = await ReadOnlyFunctions([], 'get-max-votes-notifier');
-  console.log('TEST max votes for notifier - returning votes and number', maxVotesNotifier);
-  return maxVotesNotifier;
-};
-
 // get-notifier-vote-status
 // args: none
 // what does it do: get if the notifier election process has started
 // return: false or true, boolean
+
 export const readOnlyGetNotifierVoteStatus = async () => {
   const notifierVoteStatus = await ReadOnlyFunctions([], 'get-notifier-vote-status');
-  console.log('TEST - get notifier vote status', notifierVoteStatus);
   return notifierVoteStatus;
 };
 
@@ -337,14 +307,16 @@ export const readOnlyGetNotifierVoteStatus = async () => {
 // args: none
 // what does it do: get the current block height of the Stacks blockchain
 // returns: current block
+
 export const readOnlyGetCurrentBlock = async () => {
   const currentBlock = await ReadOnlyFunctions([], 'get-current-block');
   return cvToJSON(currentBlock).value.value;
 };
 
-//exchange toggle for miners
-//get-auto-exchange
-//done by Alexis with Suciu
+// get-auto-exchange
+// args: (address principal)
+// what does it do: get the state of auto-exchange function
+// returns: boolean
 
 export const readOnlyExchangeToggle = async (args: string) => {
   const exchangeArgs = convertPrincipalToArg(args);
@@ -353,15 +325,21 @@ export const readOnlyExchangeToggle = async (args: string) => {
   return cvToJSON(exchange).value === null ? cvToJSON(exchange).value : cvToJSON(exchange).value.value.value.value;
 };
 
-//number of blocks won
-//get-blocks-won
+// get-blocks-won
+// args: none
+// what does it do: number of blocks won
+// returns: number
+
 export const readOnlyGetBlocksWon = async () => {
   const wonBlocks = await ReadOnlyFunctions([], 'get-blocks-won');
   return cvToJSON(wonBlocks).value;
 };
 
-//stacks rewards
 //get-total-rewards-distributed
+// args: none
+// what does it do: stacks rewards
+// returns: number
+
 export const readOnlyGetStacksRewards = async () => {
   const stacksRewards = await ReadOnlyFunctions([], 'get-total-rewards-distributed');
   return cvToJSON(stacksRewards).value;
