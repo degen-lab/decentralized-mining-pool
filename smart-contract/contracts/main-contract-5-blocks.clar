@@ -47,7 +47,6 @@
 
 (define-map balance principal uint)
 (define-map claimed-rewards { block-number: uint } { claimed: bool })
-(define-map add-lists-principal { address: principal } { values: (list 300 principal) })
 (define-map map-is-miner { address: principal } { value: bool })
 (define-map map-is-waiting { address: principal } { value: bool })
 (define-map map-is-pending { address: principal } { value: bool })
@@ -55,7 +54,6 @@
 (define-map map-block-asked-to-join { address: principal } { value: uint })
 (define-map map-block-proposed-to-remove { address: principal } { value: uint })
 (define-map map-block-joined { address: principal } { block-height: uint })
-(define-map map-balance-stx { address: principal } { value: uint })
 (define-map map-balance-xBTC { address: principal } { value: uint })
 (define-map auto-exchange { address: principal } { value: bool })
 (define-map btc-address { address: principal } { btc-address: (string-ascii 42) })
@@ -260,18 +258,6 @@
       (unwrap-panic (get claimed (map-get? claimed-rewards {block-number: given-block-height}))) 
       true 
       false)))
-
-(define-read-only (get-all-data-balance-miners (local-miners-list (list 100 principal))) 
-(map get-data-balance-miner local-miners-list))
-
-(define-private (get-data-balance-miner (miner principal)) 
-(begin 
-  (asserts! (is-some (get value (map-get? map-is-miner {address: miner}))) err-not-in-miner-map)
-  (ok 
-    {
-      miner: miner,
-      balance: (default-to u0 (get value (map-get? map-balance-stx {address: miner})))
-    })))
 
 ;; BALANCES FLOW
 
@@ -928,9 +914,6 @@
 
 ;; (define-read-only (check-vote-accepted) ;; to check the vote status inside FE
 ;; (is-vote-accepted (unwrap-panic (get value (map-get? map-votes-accept-join {address: tx-sender})))))
-
-(define-read-only (get-principals-list (address principal)) 
-(map-get? add-lists-principal {address: tx-sender}))
 
 (define-read-only (get-k) 
 (var-get k))
