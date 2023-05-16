@@ -173,7 +173,10 @@
           u1 
           (if (is-eq (unwrap-panic (get-n-at-block-proposed-removal miner)) u3) 
             u2 
-            (+ (- (unwrap-panic (get-n-at-block-proposed-removal miner)) (unwrap-panic (get-k-at-block-proposed-removal miner))) u1)))
+            (+ 
+              (- 
+                (unwrap-panic (get-n-at-block-proposed-removal miner)) 
+                (unwrap-panic (get-k-at-block-proposed-removal miner))) u1)))
     })))
 
 ;; pending accept miners
