@@ -2,3 +2,5 @@
 (contract-call .alex-go-swap swap-stx-to-xbtc 10 4)
 (contract-call? .alex-go-swap swap-stx-to-xbtc 10 4)
 (contract-call? .alex-go-swap swap-stx-to-xbtc u10 u4)
+(contract-call? .main-contract-5-blocks update-threshold)
+(contract-call? .main-contract-5-blocks get-k)

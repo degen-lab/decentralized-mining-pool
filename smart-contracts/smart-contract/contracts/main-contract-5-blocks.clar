@@ -78,7 +78,7 @@
 (define-data-var proposed-removal-list (list 300 principal) (list ))
 (define-data-var n uint u1)
 (define-data-var k-percentage uint u67)
-(define-data-var k uint u0)
+(define-data-var k uint u1)
 (define-data-var k-critical uint u75)
 (define-data-var waiting-list-miner-to-remove principal tx-sender) ;; use in remove-principal-miners-list
 (define-data-var pending-accept-list-miner-to-remove principal tx-sender)
@@ -487,7 +487,12 @@
     (some (var-set miners-list remove-result))
     (var-set n (- (var-get n) u1))
     (map-set map-is-miner {address: tx-sender} {value: false})
-    (if (>= new-k-percentage (var-get k-critical)) 
+    (if 
+      (is-some (index-of? (var-get proposed-removal-list) tx-sender)) 
+      (var-set proposed-removal-list (unwrap-panic (remove-principal-proposed-removal-list tx-sender))) 
+      true)
+    (if 
+      (>= new-k-percentage (var-get k-critical)) 
       (if 
         (> (var-get n) u1) 
         (some (update-threshold)) 
