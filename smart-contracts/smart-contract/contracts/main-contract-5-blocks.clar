@@ -426,7 +426,13 @@
     (ok true))))
 
 (define-private (update-threshold) 
-(var-set k (/ (* (var-get k-percentage) (- (var-get n) u1)) u100)))
+(let ((n-now (var-get n))) 
+  (if 
+    (or 
+      (is-eq n-now u1) 
+      (is-eq n-now u2)) 
+    (var-set k u1)
+    (var-set k (/ (* (var-get k-percentage) (- n-now u1)) u100)))))
 
 (define-private (add-miner-to-pool (miner principal))
 (begin 
