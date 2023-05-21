@@ -99,7 +99,7 @@
 
 
 (map-set map-is-miner {address: tx-sender} {value: true})
-(map-set map-block-joined {address: tx-sender} {block-height: u0})
+(map-set map-block-joined {address: tx-sender} {block-height: block-height})
 (map-set balance tx-sender u0)
 ;; at new join -> block height - last-join-done >= 100 !
 
@@ -565,7 +565,7 @@
     (map-set map-blacklist {address: miner} {value: true})
     (var-set proposed-removal-list (unwrap-panic (remove-principal-proposed-removal-list miner)))
     (clear-votes-map-remove-vote miner)
-    (if (>= new-k-percentage (var-get k-critical)) 
+    (if (>= new-k-percentage (var-get k-critical))
       (if 
         (> (var-get n) u1) 
         (update-threshold) 
