@@ -13,15 +13,16 @@ import MenuOpen from '@mui/icons-material/MenuOpenRounded';
 import HomeIcon from '@mui/icons-material/Home';
 import Hardware from '@mui/icons-material/Hardware';
 import Poll from '@mui/icons-material/Poll';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import colors from '../consts/colorPallete';
 import Home from '@mui/icons-material/Home';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAppSelector } from '../redux/store';
-import { selectCurrentUserRole, UserRole } from '../redux/reducers/user-state';
+import { selectCurrentTheme, selectCurrentUserRole, UserRole } from '../redux/reducers/user-state';
 import { useState } from 'react';
 import { ExpandLess, ExpandMore, StarBorder } from '@mui/icons-material';
 import { Collapse } from '@mui/material';
+import '../css/navbars/styles.css';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
@@ -37,8 +38,11 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
     right: false,
   });
 
-  const [openMiningPoolMenu, setOpenMiningPoolMenu] = useState<boolean>(true);
-  const [openVotingMenu, setOpenVotingMenu] = useState<boolean>(true);
+  const appCurrentTheme = useAppSelector(selectCurrentTheme);
+  const [openMiningPoolMenu, setOpenMiningPoolMenu] = useState<boolean>(false);
+  const [openVotingMenu, setOpenVotingMenu] = useState<boolean>(false);
+
+  const location = useLocation();
 
   const handleClickMiningPoolMenuItem = () => {
     setOpenMiningPoolMenu(!openMiningPoolMenu);
@@ -65,12 +69,12 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
     <Box
       sx={{ width: anchor === 'top' || anchor === 'bottom' ? 'auto' : 250, height: '100%' }}
       role="presentation"
-      style={{ backgroundColor: colors[currentTheme].accent2 }}
+      style={{ backgroundColor: colors[appCurrentTheme].accent2, color: colors[appCurrentTheme].colorWriting }}
     >
       <List
         onClick={toggleDrawer(anchor, false)}
         onKeyDown={toggleDrawer(anchor, false)}
-        style={{ backgroundColor: colors[currentTheme].primary }}
+        style={{ backgroundColor: colors[appCurrentTheme].primary }}
       >
         <ListItem disablePadding>
           <div
@@ -83,26 +87,34 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
             }}
           >
             <ListItemButton>
-              <MenuOpen fontSize="medium" style={{ color: colors[currentTheme].buttons }} />
+              <MenuOpen id="open-menu-icon" fontSize="medium" style={{ color: colors[appCurrentTheme].buttons }} />
             </ListItemButton>
           </div>
         </ListItem>
       </List>
-      <Divider style={{ backgroundColor: colors[currentTheme].accent2 }} />
-      <List style={{ backgroundColor: colors[currentTheme].accent2 }}>
+      <Divider style={{ backgroundColor: colors[appCurrentTheme].accent2 }} />
+      <List style={{ backgroundColor: colors[appCurrentTheme].accent2 }}>
         {/* TODO: keep what fits best, this */}
         <div style={{ marginTop: -10 }}>
-          <ListItem onClick={toggleDrawer(anchor, false)} onKeyDown={toggleDrawer(anchor, false)}>
+          <ListItem
+            className={location.pathname === '/' ? 'active-custom' : ''}
+            onClick={toggleDrawer(anchor, false)}
+            onKeyDown={toggleDrawer(anchor, false)}
+          >
             <ListItemButton component={Link} to={'/'}>
               <ListItemIcon>
-                <HomeIcon style={{ color: colors[currentTheme].secondary }} />
+                <HomeIcon style={{ color: colors[appCurrentTheme].secondary }} />
               </ListItemIcon>
-              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Home" />
+              <ListItemText
+                className="navbar-sections-font-size"
+                style={{ color: colors[appCurrentTheme].secondary }}
+                primary="Home"
+              />
             </ListItemButton>
           </ListItem>
-          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
-          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
-          <Divider style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
+          <Divider style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
         </div>
         {/* TODO: or this  */}
         {/* <List
@@ -111,27 +123,43 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
         aria-labelledby="nested-list-subheader"
       > */}
         <div>
-          <ListItem onClick={toggleDrawer(anchor, false)} onKeyDown={toggleDrawer(anchor, false)}>
+          <ListItem
+            className={location.pathname === '/dashboard' ? 'active-custom' : ''}
+            onClick={toggleDrawer(anchor, false)}
+            onKeyDown={toggleDrawer(anchor, false)}
+          >
             <ListItemButton component={Link} to={'/dashboard'}>
               <ListItemIcon>
-                <Home style={{ color: colors[currentTheme].secondary }} />
+                <Home style={{ color: colors[appCurrentTheme].secondary }} />
               </ListItemIcon>
-              <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Dashboard" />
+              <ListItemText
+                className="navbar-sections-font-size"
+                style={{ color: colors[appCurrentTheme].secondary }}
+                primary="Dashboard"
+              />
             </ListItemButton>
           </ListItem>
-          <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+          <Divider variant="middle" style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
         </div>
         {currentRole !== 'Viewer' && (
           <div>
-            <ListItem onClick={toggleDrawer(anchor, false)} onKeyDown={toggleDrawer(anchor, false)}>
+            <ListItem
+              className={location.pathname === '/myProfile' ? 'active-custom' : ''}
+              onClick={toggleDrawer(anchor, false)}
+              onKeyDown={toggleDrawer(anchor, false)}
+            >
               <ListItemButton component={Link} to={'/myProfile'}>
                 <ListItemIcon>
-                  <AccountCircleIcon style={{ color: colors[currentTheme].secondary }} />
+                  <AccountCircleIcon style={{ color: colors[appCurrentTheme].secondary }} />
                 </ListItemIcon>
-                <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Profile" />
+                <ListItemText
+                  className="navbar-sections-font-size"
+                  style={{ color: colors[appCurrentTheme].secondary }}
+                  primary="Profile"
+                />
               </ListItemButton>
             </ListItem>
-            <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+            <Divider variant="middle" style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
           </div>
         )}
         {currentRole === 'Miner' && (
@@ -140,13 +168,17 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
               <ListItem className="liMenuMiningPool">
                 <ListItemButton onClick={handleClickMiningPoolMenuItem}>
                   <ListItemIcon>
-                    <Hardware style={{ color: colors[currentTheme].secondary }} />
+                    <Hardware style={{ color: colors[appCurrentTheme].secondary }} />
                   </ListItemIcon>
-                  <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Mining Pool" />
+                  <ListItemText
+                    className="navbar-sections-font-size"
+                    style={{ color: colors[appCurrentTheme].secondary }}
+                    primary="Mining Pool"
+                  />
                   {openMiningPoolMenu ? (
-                    <ExpandLess style={{ color: colors[currentTheme].secondary }} />
+                    <ExpandLess style={{ color: colors[appCurrentTheme].secondary }} />
                   ) : (
-                    <ExpandMore style={{ color: colors[currentTheme].secondary }} />
+                    <ExpandMore style={{ color: colors[appCurrentTheme].secondary }} />
                   )}
                 </ListItemButton>
 
@@ -157,37 +189,61 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
                   timeout="auto"
                   unmountOnExit
                 >
-                  <List component="div" disablePadding>
+                  <List
+                    className={location.pathname === '/miningPool/status' ? 'active-custom' : ''}
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/miningPool/status'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Status" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Status"
+                      />
                     </ListItemButton>
                   </List>
-                  <List component="div" disablePadding>
+                  <List
+                    className={
+                      location.pathname === '/miningPool/miners' || location.pathname.slice(0, 8) === '/profile'
+                        ? 'active-custom'
+                        : ''
+                    }
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/miningPool/miners'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Miners" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Miners"
+                      />
                     </ListItemButton>
                   </List>
                 </Collapse>
               </ListItem>
-              <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+              <Divider variant="middle" style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
             </div>
             <div>
               <ListItem className="liMenuMiningPool">
                 <ListItemButton onClick={handleClickVotingMenuItem}>
                   <ListItemIcon>
-                    <Poll style={{ color: colors[currentTheme].secondary }} />
+                    <Poll style={{ color: colors[appCurrentTheme].secondary }} />
                   </ListItemIcon>
-                  <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Voting" />
+                  <ListItemText
+                    className="navbar-sections-font-size"
+                    style={{ color: colors[appCurrentTheme].secondary }}
+                    primary="Voting"
+                  />
                   {openVotingMenu ? (
-                    <ExpandLess style={{ color: colors[currentTheme].secondary }} />
+                    <ExpandLess style={{ color: colors[appCurrentTheme].secondary }} />
                   ) : (
-                    <ExpandMore style={{ color: colors[currentTheme].secondary }} />
+                    <ExpandMore style={{ color: colors[appCurrentTheme].secondary }} />
                   )}
                 </ListItemButton>
 
@@ -198,41 +254,73 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
                   timeout="auto"
                   unmountOnExit
                 >
-                  <List component="div" disablePadding>
+                  <List
+                    className={location.pathname === '/voting' ? 'active-custom' : ''}
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Status" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Status"
+                      />
                     </ListItemButton>
                   </List>
-                  <List component="div" disablePadding>
+                  <List
+                    className={location.pathname === '/voting/joiners' ? 'active-custom' : ''}
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/joiners'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Joiners" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Joiners"
+                      />
                     </ListItemButton>
                   </List>
-                  <List component="div" disablePadding>
+                  <List
+                    className={location.pathname === '/voting/removals' ? 'active-custom' : ''}
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/removals'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Removals" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Removals"
+                      />
                     </ListItemButton>
                   </List>
-                  <List component="div" disablePadding>
+                  <List
+                    className={location.pathname === '/voting/notifier' ? 'active-custom' : ''}
+                    component="div"
+                    disablePadding
+                  >
                     <ListItemButton sx={{ pl: 4 }} component={Link} to={'/voting/notifier'}>
                       <ListItemIcon>
-                        <StarBorder style={{ color: colors[currentTheme].secondary }} />
+                        <StarBorder style={{ color: colors[appCurrentTheme].secondary }} />
                       </ListItemIcon>
-                      <ListItemText style={{ color: colors[currentTheme].secondary }} primary="Notifier" />
+                      <ListItemText
+                        className="navbar-sections-font-size"
+                        style={{ color: colors[appCurrentTheme].secondary }}
+                        primary="Notifier"
+                      />
                     </ListItemButton>
                   </List>
                 </Collapse>
               </ListItem>
-              <Divider variant="middle" style={{ backgroundColor: colors[currentTheme].secondary }} />
+              <Divider variant="middle" style={{ backgroundColor: colors[appCurrentTheme].secondary }} />
             </div>
           </>
         )}
@@ -243,7 +331,7 @@ const LeftPanel = ({ currentTheme }: ConnectWalletProps) => {
   return (
     <div>
       <React.Fragment key={'left'}>
-        <Button onClick={toggleDrawer('left', true)} style={{ color: colors[currentTheme].buttons }}>
+        <Button onClick={toggleDrawer('left', true)} style={{ color: colors[appCurrentTheme].buttons }}>
           <Menu fontSize="medium" />
         </Button>
         <Drawer anchor={'left'} open={state['left']} onClose={toggleDrawer('left', false)}>

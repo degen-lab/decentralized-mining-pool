@@ -1,7 +1,6 @@
 import * as React from 'react';
 import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
-import useCurrentTheme from '../../../consts/theme';
 import colors from '../../../consts/colorPallete';
 import { ContractVotePositiveJoin, ContractVoteNegativeJoin } from '../../../consts/smartContractFunctions';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
@@ -11,11 +10,14 @@ import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../../components/TableCreation';
 import { waitingColumns, GetWaitingRows, AllTableData } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../../redux/store';
+import { selectCurrentTheme } from '../../../redux/reducers/user-state';
 
 const VotingJoiners = () => {
-  const { currentTheme } = useCurrentTheme();
   const waitingRows = GetWaitingRows();
   const navigate = useNavigate();
+
+  const appCurrentTheme = useAppSelector(selectCurrentTheme);
 
   const handlePendingVoteButtonClick = (data: string, address: string | undefined) => {
     if (address !== undefined) {
@@ -41,26 +43,27 @@ const VotingJoiners = () => {
             key={column.dataKey}
             align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
-              color: colors[currentTheme].secondary,
+              color: colors[appCurrentTheme].colorWriting,
+              backgroundColor: colors[appCurrentTheme].infoContainers,
             }}
           >
             {column.dataKey === 'generalInfo' && (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(waitingRow['address'])}>
-                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
+                  <InfoIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
               </Box>
             )}
             {column.dataKey === 'vote' ? (
               <Box>
                 <Button onClick={() => handlePendingVoteButtonClick('voteYes', waitingRow['address'])}>
-                  <ThumbUpAltIcon fontSize="small" sx={{ color: 'green' }} />
+                  <ThumbUpAltIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
                 <Button
                   style={{ marginRight: -52 }}
                   onClick={() => handlePendingVoteButtonClick('voteNo', waitingRow['address'])}
                 >
-                  <ThumbDownAltIcon fontSize="small" sx={{ color: 'red' }} />
+                  <ThumbDownAltIcon fontSize="small" sx={{ color: colors[appCurrentTheme].colorWriting }} />
                 </Button>
               </Box>
             ) : (
@@ -73,27 +76,21 @@ const VotingJoiners = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column',
-        width: '100%',
-        minHeight: 'calc(100vh - 60px)',
-      }}
-      style={{
-        backgroundColor: colors[currentTheme].accent2,
-        color: colors[currentTheme].secondary,
-      }}
-    >
-      <TableCreation
-        rows={waitingRows}
-        rowContent={waitingRowContent}
-        columns={waitingColumns}
-        tableId="waiting"
-        customTableWidth="75%"
-      />
-    </Box>
+    <div className="voting-joiners-page-main-container">
+      <div className="page-heading-title">
+        <h2>Decentralized Mining Pool</h2>
+        <h2>Voting - Joiners</h2>
+      </div>
+      <div className="principal-content-profile-page">
+        <TableCreation
+          rows={waitingRows}
+          rowContent={waitingRowContent}
+          columns={waitingColumns}
+          tableId="waiting"
+          customTableWidth="75%"
+        />
+      </div>
+    </div>
   );
 };
 

@@ -1,14 +1,19 @@
 import { IUserState, defaultUserState, selectUserSessionState } from './user-state';
-import { DISCONNECT_USER_SESSION, CONNECT_USER_SESSION, UPDATE_USER_ROLE } from '../actions';
+import { DISCONNECT_USER_SESSION, CONNECT_USER_SESSION, UPDATE_USER_ROLE, UPDATE_APP_THEME } from '../actions';
 
 import { showConnect } from '@stacks/connect';
+import logo from './../../logo.png';
 
 export interface IinitialState {
   userState: IUserState;
+  theme: Theme;
 }
+
+export type Theme = 'light' | 'dark';
 
 const initialState: IinitialState = {
   userState: defaultUserState,
+  theme: 'light',
 };
 
 interface IreduxAction {
@@ -22,8 +27,8 @@ const mainReducer = (state = initialState, action: IreduxAction) => {
     case CONNECT_USER_SESSION:
       showConnect({
         appDetails: {
-          name: 'Stacks React Starter',
-          icon: window.location.origin + '/logo512.png',
+          name: 'Stacks Decentralized Pools',
+          icon: logo,
         },
         redirectTo: '/',
         onFinish: () => {
@@ -38,6 +43,9 @@ const mainReducer = (state = initialState, action: IreduxAction) => {
       return state;
     case UPDATE_USER_ROLE:
       return { ...state, userState: { ...state.userState, userRole: action.payload } };
+
+    case UPDATE_APP_THEME:
+      return { ...state, theme: action.payload };
     default:
       return state;
   }
