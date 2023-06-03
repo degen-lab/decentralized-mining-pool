@@ -1,7 +1,6 @@
 import * as React from 'react';
 import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
-import useCurrentTheme from '../../../consts/theme';
 import colors from '../../../consts/colorPallete';
 import { ContractVotePositiveRemove, ContractVoteNegativeRemove } from '../../../consts/smartContractFunctions';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
@@ -11,11 +10,14 @@ import Button from '@mui/material/Button';
 import TableCreation from '../../../components/TableCreation';
 import { removalsColumns, GetRemovalsRows, AllTableData } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../../redux/store';
+import { selectCurrentTheme } from '../../../redux/reducers/user-state';
 
 const VotingRemovals = () => {
-  const { currentTheme } = useCurrentTheme();
   const removalsRows = GetRemovalsRows();
   const navigate = useNavigate();
+
+  const appCurrentTheme = useAppSelector(selectCurrentTheme);
 
   const handleRemovalVoteButtonClick = (data: string, address: string | undefined) => {
     if (address !== undefined) {
@@ -41,19 +43,20 @@ const VotingRemovals = () => {
             key={column.dataKey}
             align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
-              color: colors[currentTheme].secondary,
+              color: colors[appCurrentTheme].colorWriting,
+              backgroundColor: colors[appCurrentTheme].infoContainers,
             }}
           >
             {column.dataKey === 'vote' ? (
               <Box>
                 <Button onClick={() => handleRemovalVoteButtonClick('voteYes', removalsRow['address'])}>
-                  <ThumbUpAltIcon fontSize="small" sx={{ color: 'green' }} />
+                  <ThumbUpAltIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
                 <Button
                   style={{ marginRight: -52 }}
                   onClick={() => handleRemovalVoteButtonClick('voteNo', removalsRow['address'])}
                 >
-                  <ThumbDownAltIcon fontSize="small" sx={{ color: 'red' }} />
+                  <ThumbDownAltIcon fontSize="small" sx={{ color: colors[appCurrentTheme].colorWriting }} />
                 </Button>
               </Box>
             ) : (
@@ -62,7 +65,7 @@ const VotingRemovals = () => {
             {column.dataKey === 'generalInfo' && (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(removalsRow['address'])}>
-                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
+                  <InfoIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
               </Box>
             )}
@@ -73,27 +76,21 @@ const VotingRemovals = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column',
-        width: '100%',
-        minHeight: 'calc(100vh - 60px)',
-      }}
-      style={{
-        backgroundColor: colors[currentTheme].accent2,
-        color: colors[currentTheme].secondary,
-      }}
-    >
-      <TableCreation
-        rows={removalsRows}
-        rowContent={removalsRowContent}
-        columns={removalsColumns}
-        tableId="removals"
-        customTableWidth="75%"
-      />
-    </Box>
+    <div className="voting-removals-page-main-container">
+      <div className="page-heading-title">
+        <h2>Decentralized Mining Pool</h2>
+        <h2>Voting - Removals</h2>
+      </div>
+      <div className="principal-content-profile-page">
+        <TableCreation
+          rows={removalsRows}
+          rowContent={removalsRowContent}
+          columns={removalsColumns}
+          tableId="removals"
+          customTableWidth="75%"
+        />
+      </div>
+    </div>
   );
 };
 

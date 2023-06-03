@@ -1,7 +1,7 @@
+import './styles.css';
 import * as React from 'react';
 import TableCell from '@mui/material/TableCell';
 import Box from '@mui/material/Box';
-import useCurrentTheme from '../../../consts/theme';
 import colors from '../../../consts/colorPallete';
 import { ContractProposeRemoval } from '../../../consts/smartContractFunctions';
 import Button from '@mui/material/Button';
@@ -10,11 +10,13 @@ import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import InfoIcon from '@mui/icons-material/Info';
 import { AllTableData, GetMinersRows, minerColumns } from '../../../consts/tableData';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../../redux/store';
+import { selectCurrentTheme } from '../../../redux/reducers/user-state';
 
 const MiningPool = () => {
   const navigate = useNavigate();
-  const { currentTheme } = useCurrentTheme();
   const minersRows = GetMinersRows();
+  const appCurrentTheme = useAppSelector(selectCurrentTheme);
 
   const handleMinerRemoveButtonClick = (address: string | undefined) => {
     if (address !== undefined) {
@@ -36,13 +38,14 @@ const MiningPool = () => {
             key={column.dataKey}
             align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
-              color: colors[currentTheme].secondary,
+              color: colors[appCurrentTheme].colorWriting,
+              backgroundColor: colors[appCurrentTheme].infoContainers,
             }}
           >
             {column.dataKey === 'proposeRemoval' ? (
               <Box>
                 <Button sx={{ marginRight: 3 }} onClick={() => handleMinerRemoveButtonClick(minersRow['address'])}>
-                  <PersonRemoveIcon fontSize="small" sx={{ color: 'red' }} />
+                  <PersonRemoveIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
               </Box>
             ) : (
@@ -51,7 +54,7 @@ const MiningPool = () => {
             {column.dataKey === 'generalInfo' && (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(minersRow['address'])}>
-                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
+                  <InfoIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultYellow }} />
                 </Button>
               </Box>
             )}
@@ -62,27 +65,21 @@ const MiningPool = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column',
-        width: '100%',
-        minHeight: 'calc(100vh - 60px)',
-      }}
-      style={{
-        backgroundColor: colors[currentTheme].accent2,
-        color: colors[currentTheme].secondary,
-      }}
-    >
-      <TableCreation
-        rows={minersRows}
-        rowContent={minersRowContent}
-        columns={minerColumns}
-        tableId="miners"
-        customTableWidth="75%"
-      />
-    </Box>
+    <div className="miningpool-miners-page-main-container">
+      <div className="page-heading-title">
+        <h2>Decentralized Mining Pool</h2>
+        <h2>Mining Pool - Miners</h2>
+      </div>
+      <div className="principal-content-profile-page">
+        <TableCreation
+          rows={minersRows}
+          rowContent={minersRowContent}
+          columns={minerColumns}
+          tableId="miners"
+          customTableWidth="75%"
+        />
+      </div>
+    </div>
   );
 };
 

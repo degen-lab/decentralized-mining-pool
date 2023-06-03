@@ -1,5 +1,4 @@
 import colors from '../../../consts/colorPallete';
-import useCurrentTheme from '../../../consts/theme';
 import { Box, Button, TableCell } from '@mui/material';
 import { useEffect, useState } from 'react';
 import {
@@ -10,8 +9,8 @@ import {
   readOnlyGetNotifierElectionProcessData,
 } from '../../../consts/readOnly';
 import { useAppSelector } from '../../../redux/store';
-import { selectUserSessionState } from '../../../redux/reducers/user-state';
-import { ContractStartVoteNotifier, ContractVoteForNotifier } from '../../../consts/smartContractFunctions';
+import { selectCurrentTheme, selectUserSessionState } from '../../../redux/reducers/user-state';
+import { ContractVoteForNotifier } from '../../../consts/smartContractFunctions';
 import { principalCV, listCV } from '@stacks/transactions';
 import { AllTableData, GetNotifiersRows, notifierColumns } from '../../../consts/tableData';
 import React from 'react';
@@ -19,9 +18,10 @@ import InfoIcon from '@mui/icons-material/Info';
 import TableCreation from '../../TableCreation';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import { useNavigate } from 'react-router-dom';
+import VotingNotifierInfoContainer from '../../reusableComponents/voting/VotingNotifierInfoContainer';
+import './styles.css';
 
 const VotingNotifier = () => {
-  const { currentTheme } = useCurrentTheme();
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [electionBlocksRemaining, setElectionBlocksRemaining] = useState<number | null>(null);
   const [currentNotifier, setCurrentNotifier] = useState<string | null>(null);
@@ -30,6 +30,8 @@ const VotingNotifier = () => {
   const userSession = useAppSelector(selectUserSessionState);
   const [notifiersRows, setNotifiersRows] = useState<{ id: number; address: string; notifierVotes: string }[]>([]);
   const navigate = useNavigate();
+
+  const appCurrentTheme = useAppSelector(selectCurrentTheme);
 
   const handleMinerInfoButtonClick = (address: string | undefined) => {
     if (address !== undefined) {
@@ -51,14 +53,15 @@ const VotingNotifier = () => {
             key={column.dataKey}
             align={column.dataKey === 'address' ? 'left' : 'right'}
             sx={{
-              color: colors[currentTheme].secondary,
+              color: colors[appCurrentTheme].colorWriting,
+              backgroundColor: colors[appCurrentTheme].infoContainers,
             }}
           >
             {notifiersRow[column.dataKey]}
             {column.dataKey === 'generalInfo' && (
               <Box>
                 <Button onClick={() => handleMinerInfoButtonClick(notifiersRow['address'])}>
-                  <InfoIcon fontSize="small" sx={{ color: colors[currentTheme].secondary }} />
+                  <InfoIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultYellow }} />
                 </Button>
               </Box>
             )}
@@ -66,10 +69,10 @@ const VotingNotifier = () => {
               <Box>
                 <Button
                   style={{ marginRight: -18 }}
-                  disabled={votedNotifier !== "you haven't voted yet"}
+                  disabled={votedNotifier !== "You haven't voted yet!"}
                   onClick={() => handlePendingVoteButtonClick(notifiersRow['address'])}
                 >
-                  <ThumbUpAltIcon fontSize="small" sx={{ color: 'green' }} />
+                  <ThumbUpAltIcon fontSize="small" sx={{ color: colors[appCurrentTheme].defaultOrange }} />
                 </Button>
               </Box>
             )}
@@ -100,7 +103,7 @@ const VotingNotifier = () => {
       setFetchedVotesThreshold(true);
     };
     getNotifierVotesThreshold();
-  }, [notifierVoteThreshold]);
+  }, []);
 
   useEffect(() => {
     const fetchNotifierRows = async () => {
@@ -110,7 +113,7 @@ const VotingNotifier = () => {
       }
     };
     fetchNotifierRows();
-  }, [fetchedMinerList, fetchedVotesThreshold]);
+  }, [notifierVoteThreshold, minersList]);
 
   useEffect(() => {
     const getCurrentNotifier = async () => {
@@ -119,7 +122,7 @@ const VotingNotifier = () => {
     };
 
     getCurrentNotifier();
-  }, [currentNotifier]);
+  }, []);
 
   useEffect(() => {
     const getNotifierStatus = async () => {
@@ -128,12 +131,12 @@ const VotingNotifier = () => {
       setElectionBlocksRemaining(parseInt(notifier['election-blocks-remaining'].value));
     };
     getNotifierStatus();
-  }, [notifierVoteStatus, electionBlocksRemaining]);
+  }, []);
 
   useEffect(() => {
     const args = userSession.loadUserData().profile.stxAddress.testnet;
     setUserAddress(args);
-  }, [userAddress]);
+  }, []);
 
   useEffect(() => {
     const getVotedNotifier = async () => {
@@ -143,54 +146,37 @@ const VotingNotifier = () => {
       }
     };
     getVotedNotifier();
-  }, [votedNotifier, userAddress]);
+  }, [userAddress]);
 
   return (
-    <Box
-      sx={{
-        minHeight: 'calc(100vh - 60px)',
-        backgroundColor: colors[currentTheme].accent2,
-        color: colors[currentTheme].secondary,
-        marginTop: -2.5,
-      }}
-    >
-      <div>
+    <div className="voting-notifier-page-main-container">
+      <div className="page-heading-title">
+        <h2>Decentralized Mining Pool</h2>
         <h2>Voting - Notifier</h2>
-        <ul>
-          <li>who I voted for: {votedNotifier !== null ? votedNotifier : ''}</li>
-          <li>number of blocks remaining to vote: {electionBlocksRemaining !== null && electionBlocksRemaining}</li>
-          <li>
-            the elected notifier if the vote ended:{' '}
-            {notifierVoteStatus
-              ? 'the vote is still open, no notifier to show yet'
-              : currentNotifier !== null
-              ? currentNotifier
-              : '-'}
-          </li>
-          <li>
-            <Button
-              variant="contained"
-              className="minerProfileButtons"
-              onClick={() => {
-                ContractStartVoteNotifier();
-              }}
-            >
-              Start notifier vote
-            </Button>
-          </li>
-        </ul>
       </div>
+      <div
+        className="principal-content-profile-page"
+        style={{ marginTop: electionBlocksRemaining !== 0 && electionBlocksRemaining !== null ? -11 : 90 }}
+      >
+        <div className="main-info-container-normal-user">
+          <VotingNotifierInfoContainer
+            votedFor={votedNotifier}
+            blocksRemaining={electionBlocksRemaining}
+            electedNotifier={currentNotifier}
+            voteStatus={notifierVoteStatus}
+          />
+        </div>
+      </div>
+
       {electionBlocksRemaining !== 0 && electionBlocksRemaining !== null && (
-        <Box
-          sx={{
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
             flexDirection: 'column',
             width: '100%',
-          }}
-          style={{
-            backgroundColor: colors[currentTheme].accent2,
-            color: colors[currentTheme].secondary,
+            backgroundColor: colors[appCurrentTheme].accent2,
+            color: colors[appCurrentTheme].secondary,
           }}
         >
           <TableCreation
@@ -200,9 +186,9 @@ const VotingNotifier = () => {
             tableId="notifier"
             customTableWidth="75%"
           />
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 
