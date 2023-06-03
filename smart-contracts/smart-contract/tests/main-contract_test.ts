@@ -1,5 +1,10 @@
 import { Clarinet, Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v1.4.0/index.ts';
 import { assertEquals } from 'https://deno.land/std@0.170.0/testing/asserts.ts';
+
+const CONVERT_TO_STX = (amount: number) => {
+  return amount * 1000000;
+};
+
 const CONTRACT_NAME = 'main-contract';
 const ASK_TO_JOIN = 'ask-to-join';
 const GET_MINERS_LIST = 'get-miners-list';
@@ -18,12 +23,10 @@ const WITHDRAW = 'withdraw-stx';
 const GET_BALANCE = 'get-balance';
 const GET_REWARD_AT_BLOCK_READ = 'get-reward-at-block-read';
 const REWARD_DISTRIBUTION = 'reward-distribution';
+const GET_DATA_WAITING_MINER = 'get-all-data-waiting-miners'
+const GET_DATA_REMOVAL = 'get-all-data-miners-proposed-for-removal'
 const err_insufficient_balance = '(err u1001)';
 const err_missing_balance = '(err u1002)';
-
-const CONVERT_TO_STX = (amount) => {
-  return amount * 1000000;
-};
 const LEAVE_POOL = 'leave-pool';
 const TRY_ENTER_POOL = 'try-enter-pool';
 const PROPOSE_REMOVAL = 'propose-removal';
@@ -49,6 +52,138 @@ const err_already_notifier = '(err u125)';
 const err_no_voting_period = '(err u129)';
 
 Clarinet.test({
+  name: 'Get All Data Waiting 300 Miners',
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get('deployer')!;
+    let testing_list = [];
+    let block = chain.mineBlock([]);
+    assertEquals(block.receipts.length, 0);
+    assertEquals(block.height, 2);
+
+    for (let i = 1; i <= 299; i++) {
+      const miner = accounts.get(`wallet_${i}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
+      ]);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
+    }
+    const testing_list_length = testing_list.length;
+    assertEquals(testing_list_length, 299);
+    block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
+    assertEquals(block.receipts.length, 1);
+    assertEquals(block.height, 302);
+
+    for (let i = 1; i <= 299; i++) {
+      const miner = accounts.get(`wallet_${i}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, VOTE_POSITIVE_JOIN, [types.principal(miner.address)], deployer.address),
+        Tx.contractCall(CONTRACT_NAME, TRY_ENTER_POOL, [], miner.address),
+      ]);
+    }
+
+    block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
+    assertEquals(block.receipts.length, 1);
+    assertEquals(block.height, 602);
+
+    for (let i = 1; i <= 50; i++) {
+      block = chain.mineBlock([]);
+    }
+
+    block = chain.mineBlock([
+      Tx.contractCall(CONTRACT_NAME, ADD_PENDING_MINERS, [], deployer.address),
+      Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
+    ]);
+    assertEquals(block.receipts[0].result, `(ok true)`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
+    assertEquals(block.receipts.length, 2);
+    assertEquals(block.height, 653);
+
+    block = chain.mineBlock([
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(accounts.get(`wallet_${300}`)!.address)], accounts.get(`wallet_${300}`)!.address),
+      Tx.contractCall(CONTRACT_NAME, GET_DATA_WAITING_MINER, [types.list([types.principal(accounts.get(`wallet_${300}`)!.address)])], deployer.address),
+    ]);
+
+    for (let i = 91; i <= 299; i++) {
+      const miner = accounts.get(`wallet_${300}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, VOTE_POSITIVE_JOIN, [types.principal(miner.address)], accounts.get(`wallet_${i}`)!.address),
+      ]);
+    }
+
+    for (let i = 1; i <= 90; i++) {
+      const miner = accounts.get(`wallet_${300}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, VOTE_NEGATIVE_JOIN, [types.principal(miner.address)], accounts.get(`wallet_${i}`)!.address),
+      ]);
+    }
+
+    block = chain.mineBlock([
+      Tx.contractCall(CONTRACT_NAME, GET_DATA_WAITING_MINER, [types.list([types.principal(accounts.get(`wallet_${300}`)!.address)])], deployer.address),
+    ]);
+  },
+});
+
+Clarinet.test({
+  name: 'Get All Data Removals 300 Miners',
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get('deployer')!;
+    let testing_list = [];
+    let block = chain.mineBlock([]);
+    assertEquals(block.receipts.length, 0);
+    assertEquals(block.height, 2);
+
+    for (let i = 1; i <= 299; i++) {
+      const miner = accounts.get(`wallet_${i}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
+      ]);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
+    }
+    const testing_list_length = testing_list.length;
+    assertEquals(testing_list_length, 299);
+    block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
+    assertEquals(block.receipts.length, 1);
+    assertEquals(block.height, 302);
+
+    for (let i = 1; i <= 299; i++) {
+      const miner = accounts.get(`wallet_${i}`)!;
+      block = chain.mineBlock([
+        Tx.contractCall(CONTRACT_NAME, VOTE_POSITIVE_JOIN, [types.principal(miner.address)], deployer.address),
+        Tx.contractCall(CONTRACT_NAME, TRY_ENTER_POOL, [], miner.address),
+      ]);
+    }
+
+    block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
+    assertEquals(block.receipts.length, 1);
+    assertEquals(block.height, 602);
+
+    for (let i = 1; i <= 50; i++) {
+      block = chain.mineBlock([]);
+    }
+
+    block = chain.mineBlock([
+      Tx.contractCall(CONTRACT_NAME, ADD_PENDING_MINERS, [], deployer.address),
+      Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
+    ]);
+    assertEquals(block.receipts[0].result, `(ok true)`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
+    assertEquals(block.receipts.length, 2);
+    assertEquals(block.height, 653);
+
+    block = chain.mineBlock([
+      Tx.contractCall(CONTRACT_NAME, PROPOSE_REMOVAL, [types.principal(accounts.get(`wallet_${299}`)!.address)], deployer.address),
+      Tx.contractCall(CONTRACT_NAME, GET_DATA_REMOVAL, [types.list([types.principal(accounts.get(`wallet_${299}`)!.address)])], deployer.address),
+    ]);
+  },
+});
+
+Clarinet.test({
   name: 'Adding miners to pool, election process',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
@@ -64,7 +199,7 @@ Clarinet.test({
     // 1 miner asks to join
 
     let block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(deployer.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(deployer.address)], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -100,7 +235,7 @@ Clarinet.test({
     // 1 miner asks to join
 
     block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(deployer.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(deployer.address)], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -172,7 +307,7 @@ Clarinet.test({
     // another user asks to join
 
     block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -188,7 +323,7 @@ Clarinet.test({
     assertEquals(block.height, 103);
 
     let k = chain.callReadOnlyFn(CONTRACT_NAME, GET_K, [], deployer.address);
-    k.result.expectUint(0); // check k==1
+    k.result.expectUint(1); // check k==1
 
     // 1 negative vote, 1 negative vote
 
@@ -217,7 +352,7 @@ Clarinet.test({
     // another user asks to join
 
     block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -233,7 +368,7 @@ Clarinet.test({
     assertEquals(block.height, 105);
 
     k = chain.callReadOnlyFn(CONTRACT_NAME, GET_K, [], deployer.address);
-    k.result.expectUint(0); // check k==0
+    k.result.expectUint(1); // check k==1
     // 1 positive vote
 
     block = chain.mineBlock([
@@ -279,8 +414,8 @@ Clarinet.test({
     // two users asks to join
 
     block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user3.address)], user3.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user4.address)], user4.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user3.address)], user3.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user4.address)], user4.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -331,8 +466,8 @@ Clarinet.test({
     // two users asks to join
 
     block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user3.address)], user3.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user5.address)], user5.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user3.address)], user3.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user5.address)], user5.address),
       Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], user1.address),
       Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], user1.address),
@@ -412,7 +547,7 @@ Clarinet.test({
   name: '46 Miners ask to join',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -420,13 +555,13 @@ Clarinet.test({
     for (let i = 1; i <= 46; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 49);
 
@@ -439,7 +574,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 96);
 
@@ -453,7 +588,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 147);
   },
@@ -463,7 +598,7 @@ Clarinet.test({
   name: '100 Miners ask to join',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -471,13 +606,13 @@ Clarinet.test({
     for (let i = 1; i <= 100; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 103);
 
@@ -490,7 +625,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 204);
 
@@ -503,7 +638,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 255);
   },
@@ -513,7 +648,7 @@ Clarinet.test({
   name: '300 Miners ask to join',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -521,13 +656,13 @@ Clarinet.test({
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 302);
 
@@ -540,7 +675,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 602);
 
@@ -553,7 +688,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 653);
   },
@@ -563,7 +698,7 @@ Clarinet.test({
   name: '100 Miners ask to join, vote NEGATIVE',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -571,13 +706,13 @@ Clarinet.test({
     for (let i = 1; i <= 100; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 103);
 
@@ -600,7 +735,7 @@ Clarinet.test({
   name: '300 Miners ask to join, vote NEGATIVE',
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -608,13 +743,13 @@ Clarinet.test({
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 302);
 
@@ -644,7 +779,7 @@ Clarinet.test({
     const user5 = accounts.get('wallet_5')!;
     const user6 = accounts.get('wallet_6')!;
     const user7 = accounts.get('wallet_7')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -652,13 +787,13 @@ Clarinet.test({
     for (let i = 1; i <= 14; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 17);
 
@@ -671,7 +806,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 32);
 
@@ -686,7 +821,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_K, [], user3.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     block.receipts[2].result.expectUint(9); // n=15, k=(15-1)*0.67=9
     assertEquals(block.receipts.length, 3);
     assertEquals(block.height, 113);
@@ -715,7 +850,7 @@ Clarinet.test({
     const user5 = accounts.get('wallet_5')!;
     const user6 = accounts.get('wallet_6')!;
     const user7 = accounts.get('wallet_7')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -723,13 +858,13 @@ Clarinet.test({
     for (let i = 1; i <= 19; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 22);
 
@@ -742,7 +877,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 42);
 
@@ -757,7 +892,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_K, [], user3.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     block.receipts[2].result.expectUint(12); // n=20, k=(20-1)*0.67=12
     assertEquals(block.receipts.length, 3);
     assertEquals(block.height, 123);
@@ -837,7 +972,7 @@ Clarinet.test({
     const user54 = accounts.get('wallet_54')!;
     const user55 = accounts.get('wallet_55')!;
     const user56 = accounts.get('wallet_56')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -845,13 +980,13 @@ Clarinet.test({
     for (let i = 1; i <= 49; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 52);
 
@@ -864,7 +999,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 102);
 
@@ -874,7 +1009,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_K, [], user3.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     // block.receipts[2].result.expectUint(12); // n=20, k=(20-1)*0.67=12
     assertEquals(block.receipts.length, 3);
     assertEquals(block.height, 103);
@@ -945,7 +1080,7 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
 
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -953,13 +1088,13 @@ Clarinet.test({
     for (let i = 1; i <= 100; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 103);
 
@@ -972,7 +1107,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 204);
 
@@ -981,7 +1116,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 205);
 
@@ -998,7 +1133,7 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
 
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -1006,13 +1141,13 @@ Clarinet.test({
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 302);
 
@@ -1025,7 +1160,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 602);
 
@@ -1034,7 +1169,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 603);
 
@@ -1067,8 +1202,8 @@ Clarinet.test({
     const user2 = accounts.get('wallet_2')!;
 
     let block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user1.address)], user1.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user1.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
     ]);
 
     assertEquals(block.receipts[0].result, `(ok true)`);
@@ -1164,10 +1299,10 @@ Clarinet.test({
     const user4 = accounts.get('wallet_4')!;
 
     let block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user1.address)], user1.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user3.address)], user3.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user4.address)], user4.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user1.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user3.address)], user3.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user4.address)], user4.address),
     ]);
 
     assertEquals(block.receipts[0].result, `(ok true)`);
@@ -1337,14 +1472,14 @@ Clarinet.test({
     const user8 = accounts.get('wallet_8')!;
 
     let block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user1.address)], user1.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user3.address)], user3.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user4.address)], user4.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user5.address)], user5.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user6.address)], user6.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user7.address)], user7.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user8.address)], user8.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user1.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user3.address)], user3.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user4.address)], user4.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user5.address)], user5.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user6.address)], user6.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user7.address)], user7.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user8.address)], user8.address),
     ]);
 
     assertEquals(block.receipts[0].result, `(ok true)`);
@@ -1513,25 +1648,25 @@ Clarinet.test({
     const user19 = accounts.get('wallet_19')!;
 
     let block = chain.mineBlock([
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user1.address)], user1.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user2.address)], user2.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user3.address)], user3.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user4.address)], user4.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user5.address)], user5.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user6.address)], user6.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user7.address)], user7.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user8.address)], user8.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user9.address)], user9.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user10.address)], user10.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user11.address)], user11.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user12.address)], user12.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user13.address)], user13.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user14.address)], user14.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user15.address)], user15.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user16.address)], user16.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user17.address)], user17.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user18.address)], user18.address),
-      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(user19.address)], user19.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user1.address)], user1.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user2.address)], user2.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user3.address)], user3.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user4.address)], user4.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user5.address)], user5.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user6.address)], user6.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user7.address)], user7.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user8.address)], user8.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user9.address)], user9.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user10.address)], user10.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user11.address)], user11.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user12.address)], user12.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user13.address)], user13.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user14.address)], user14.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user15.address)], user15.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user16.address)], user16.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user17.address)], user17.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user18.address)], user18.address),
+      Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(user19.address)], user19.address),
     ]);
 
     assertEquals(block.receipts[0].result, `(ok true)`);
@@ -1722,7 +1857,7 @@ Clarinet.test({
     const deployer = accounts.get('deployer')!;
     const user1 = accounts.get('wallet_1')!;
     const user2 = accounts.get('wallet_2')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -1730,13 +1865,13 @@ Clarinet.test({
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 302);
 
@@ -1749,7 +1884,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 602);
 
@@ -1758,7 +1893,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 603);
 
@@ -1801,7 +1936,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, VOTE_NEGATIVE_REMOVE, [types.principal(user1.address)], user2.address),
     ]);
 
-    assertEquals(block.receipts[0].result, `[${deployer.address},${waiting_list.slice(1)}]`);
+    assertEquals(block.receipts[0].result, `[${deployer.address},${testing_list.slice(1)}]`);
     assertEquals(block.receipts[1].result, `${err_not_proposed_removal}`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 907);
@@ -1814,7 +1949,7 @@ Clarinet.test({
     const deployer = accounts.get('deployer')!;
     const user1 = accounts.get('wallet_1')!;
     const user2 = accounts.get('wallet_2')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -1822,13 +1957,13 @@ Clarinet.test({
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 302);
 
@@ -1841,7 +1976,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 602);
 
@@ -1850,7 +1985,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 603);
 
@@ -1881,7 +2016,16 @@ Clarinet.test({
       else assertEquals(block.receipts[0].result, `none`);
 
       assertEquals(block.receipts[1].result, `(ok true)`);
-      if (2 * i + 1 == 203) assertEquals(block.receipts[2].result, `${err_no_voting_period}`);
+
+      if (2 * i + 1 == 203) {
+        block = chain.mineBlock([
+          Tx.contractCall(CONTRACT_NAME, GET_NOTIFIER_VOTE_NUMBER, [types.principal(user1.address)], deployer.address),
+          Tx.contractCall(CONTRACT_NAME, VOTE_NOTIFIER, [types.principal(user1.address)], accounts.get(`wallet_${2 * i + 2}`).address),
+        ]);
+
+        assertEquals(block.receipts[0].result, `none`);
+        assertEquals(block.receipts[1].result, `${err_no_voting_period}`);
+      }
       else assertEquals(block.receipts[2].result, `(ok true)`);
     }
 
@@ -1893,7 +2037,7 @@ Clarinet.test({
     assertEquals(block.receipts[0].result, `${user1.address}`);
     assertEquals(block.receipts[1].result, `false`);
     assertEquals(block.receipts.length, 2);
-    assertEquals(block.height, 705);
+    assertEquals(block.height, 706);
 
     // Second case: accept notifier update comparing votes number to k/2 on vote fn after 144 blocks
     // k=200, k/2=100
@@ -1905,7 +2049,7 @@ Clarinet.test({
     assertEquals(block.receipts[0].result, `(ok true)`);
     assertEquals(block.receipts[1].result, `true`);
     assertEquals(block.receipts.length, 2);
-    assertEquals(block.height, 706);
+    assertEquals(block.height, 707);
 
     for (let i = 2; i <= 147; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
@@ -1939,7 +2083,7 @@ Clarinet.test({
     assertEquals(block.receipts[1].result, `u0`);
     assertEquals(block.receipts[2].result, `(ok true)`);
     assertEquals(block.receipts.length, 3);
-    assertEquals(block.height, 853);
+    assertEquals(block.height, 854);
 
     block = chain.mineBlock([
       Tx.contractCall(CONTRACT_NAME, GET_NOTIFIER, [], deployer.address),
@@ -1949,7 +2093,7 @@ Clarinet.test({
     assertEquals(block.receipts[0].result, `${deployer.address}`);
     assertEquals(block.receipts[1].result, `false`);
     assertEquals(block.receipts.length, 2);
-    assertEquals(block.height, 854);
+    assertEquals(block.height, 855);
 
     // Third case: Reject notifier update not enough votes (k/2) for at least one notifier after 144 blocks
     // k=200, k/2=100
@@ -1961,7 +2105,7 @@ Clarinet.test({
     assertEquals(block.receipts[0].result, `(ok true)`);
     assertEquals(block.receipts[1].result, `true`);
     assertEquals(block.receipts.length, 2);
-    assertEquals(block.height, 855);
+    assertEquals(block.height, 856);
 
     for (let i = 2; i <= 146; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
@@ -1995,7 +2139,7 @@ Clarinet.test({
     assertEquals(block.receipts[1].result, `u0`);
     assertEquals(block.receipts[2].result, `(ok true)`);
     assertEquals(block.receipts.length, 3);
-    assertEquals(block.height, 1001);
+    assertEquals(block.height, 1002);
 
     block = chain.mineBlock([
       Tx.contractCall(CONTRACT_NAME, GET_NOTIFIER, [], deployer.address),
@@ -2005,7 +2149,7 @@ Clarinet.test({
     assertEquals(block.receipts[0].result, `${deployer.address}`);
     assertEquals(block.receipts[1].result, `false`);
     assertEquals(block.receipts.length, 2);
-    assertEquals(block.height, 1002);
+    assertEquals(block.height, 1003);
   },
 });
 
@@ -2094,7 +2238,7 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
 
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -2137,7 +2281,7 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
 
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -2177,7 +2321,7 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
 
-    let waiting_list = [];
+    let testing_list = [];
     let block = chain.mineBlock([]);
     assertEquals(block.receipts.length, 0);
     assertEquals(block.height, 2);
@@ -2216,19 +2360,19 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
     const user1 = accounts.get('wallet_1')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block;
 
     for (let i = 1; i <= 100; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 102);
 
@@ -2241,7 +2385,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 203);
 
@@ -2250,7 +2394,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 204);
 
@@ -2281,19 +2425,19 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
     const user1 = accounts.get('wallet_1')!;
-    let waiting_list = [];
+    let testing_list = [];
     let block;
 
     for (let i = 1; i <= 299; i++) {
       const miner = accounts.get(`wallet_${i}`)!;
       block = chain.mineBlock([
-        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.principal(miner.address)], miner.address),
+        Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(miner.address)], miner.address),
       ]);
-      if (i == 1) waiting_list.push(`${miner.address}`);
-      else waiting_list.push(` ${miner.address}`);
+      if (i == 1) testing_list.push(`${miner.address}`);
+      else testing_list.push(` ${miner.address}`);
     }
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_WAITING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 301);
 
@@ -2306,7 +2450,7 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([Tx.contractCall(CONTRACT_NAME, GET_PENDING_LIST, [], deployer.address)]);
-    assertEquals(block.receipts[0].result, `[${waiting_list}]`);
+    assertEquals(block.receipts[0].result, `[${testing_list}]`);
     assertEquals(block.receipts.length, 1);
     assertEquals(block.height, 601);
 
@@ -2315,7 +2459,7 @@ Clarinet.test({
       Tx.contractCall(CONTRACT_NAME, GET_MINERS_LIST, [], deployer.address),
     ]);
     assertEquals(block.receipts[0].result, `(ok true)`);
-    assertEquals(block.receipts[1].result, `[${deployer.address}, ${waiting_list}]`);
+    assertEquals(block.receipts[1].result, `[${deployer.address}, ${testing_list}]`);
     assertEquals(block.receipts.length, 2);
     assertEquals(block.height, 602);
 

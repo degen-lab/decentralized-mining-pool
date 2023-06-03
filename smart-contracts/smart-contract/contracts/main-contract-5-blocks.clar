@@ -1,5 +1,3 @@
-;; (use-trait return-map-1 .map-trait-1.return-map-1)
-
 (define-constant err-invalid (err u300))
 (define-constant err-list-length-exceeded (err u101))
 (define-constant err-already-asked-to-join (err u102))

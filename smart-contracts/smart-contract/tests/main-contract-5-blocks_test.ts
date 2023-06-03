@@ -1,25 +1,9 @@
 import { Clarinet, Tx, Chain, Account, types } from 'https://deno.land/x/clarinet@v1.5.4/index.ts';
 import { assertEquals } from 'https://deno.land/std@0.170.0/testing/asserts.ts';
 
-// Clarinet.test({
-//   name: 'Ensure that <...>',
-//   async fn(chain: Chain, accounts: Map<string, Account>) {
-//     // arrange: set up the chain, state, and other required elements
-//     let wallet_1 = accounts.get('wallet_1')!;
-
-//     // act: perform actions related to the current test
-//     let block = chain.mineBlock([
-//       /*
-//        * Add transactions with:
-//        * Tx.contractCall(...)
-//        */
-//     ]);
-
-//     // assert: review returned data, contract state, and other requirements
-//     assertEquals(block.receipts.length, 0);
-//     assertEquals(block.height, 2);
-//   },
-// });
+const CONVERT_TO_STX = (amount: number) => {
+  return amount * 1000000;
+};
 
 const CONTRACT_NAME = 'main-contract-5-blocks';
 const ASK_TO_JOIN = 'ask-to-join';
@@ -43,10 +27,6 @@ const GET_DATA_WAITING_MINER = 'get-all-data-waiting-miners'
 const GET_DATA_REMOVAL = 'get-all-data-miners-proposed-for-removal'
 const err_insufficient_balance = '(err u1001)';
 const err_missing_balance = '(err u1002)';
-
-const CONVERT_TO_STX = (amount) => {
-  return amount * 1000000;
-};
 const LEAVE_POOL = 'leave-pool';
 const TRY_ENTER_POOL = 'try-enter-pool';
 const PROPOSE_REMOVAL = 'propose-removal';
@@ -139,7 +119,6 @@ Clarinet.test({
     }
 
     block = chain.mineBlock([
-      // Tx.contractCall(CONTRACT_NAME, ASK_TO_JOIN, [types.ascii(accounts.get(`wallet_${300}`)!.address)], accounts.get(`wallet_${300}`)!.address),
       Tx.contractCall(CONTRACT_NAME, GET_DATA_WAITING_MINER, [types.list([types.principal(accounts.get(`wallet_${300}`)!.address)])], deployer.address),
     ]);
   },
