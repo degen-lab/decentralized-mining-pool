@@ -11,17 +11,27 @@
 
 use std::{collections::BTreeMap, str::FromStr};
 
-use bitcoin::{blockdata::{block, opcodes::all, script::Builder}, psbt::{Prevouts, TapTree}, schnorr::TapTweak, secp256k1::{All, Message, Secp256k1, SecretKey}, util::{
-    sighash::{ScriptPath, SighashCache},
-    taproot::{ControlBlock, LeafVersion, TaprootBuilder, TaprootSpendInfo},
-}, Address, KeyPair, LockTime, Network, OutPoint, PackedLockTime, SchnorrSig, SchnorrSighashType, Script, Sequence, Transaction, TxIn, TxOut, Witness, XOnlyPublicKey, Txid, SigHashType, secp256k1};
-use bitcoin::Denomination::Satoshi;
-use bitcoin_hashes::{hex::FromHex, Hash};
+use bitcoin::{
+    blockdata::{block, opcodes::all, script::Builder},
+    psbt::{serialize::Serialize, Prevouts, TapTree},
+    schnorr::{self, TapTweak},
+    secp256k1::{All, Message, Secp256k1, SecretKey},
+    util::{
+        sighash::{ScriptPath, SighashCache},
+        taproot::{ControlBlock, LeafVersion, TaprootBuilder, TaprootSpendInfo},
+    },
+    Address, KeyPair, LockTime, Network, OutPoint, PackedLockTime, PrivateKey, PublicKey,
+    SchnorrSig, SchnorrSighashType, Script, Sequence, Transaction, TxIn, TxOut, Witness,
+    XOnlyPublicKey,
+};
+use bitcoin_hashes::{
+    hex::{FromHex, ToHex},
+    Hash,
+};
+// use bitcoin_hashes::serde::Serialize;
 use electrum_client::{Client, ElectrumApi};
 
 use crate::bitcoin_wallet::z_development::helpers;
-use crate::simple_wallet::p2wpkh_electrum;
-use crate::simple_wallet::p2wpkh_electrum::from_seed;
 
 fn create_prev_outputs(prev_tx: &Vec<TxIn>) -> Vec<TxIn> {
     let mut prev_outputs: Vec<TxIn> = vec![];
@@ -55,7 +65,12 @@ fn create_transaction(
         input: vec![TxIn {
             previous_output: vec_tx_in[tx_index].previous_output.clone(),
             script_sig: Script::new(),
-            sequence: Sequence(0xFFFFFFFF),
+            // format for sequence to work accordingly to bip-068 (https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki)
+            // 0xMNOPQRST
+            // M >= 8
+            // O is [0, 3] or [8, B]
+            // QRST represents relative lock-time ( works with anything ), but should be lock_time converted to hex
+            sequence: Sequence(0x8030FFFF),
             witness: Witness::default(),
         }],
         output: vec![TxOut {
@@ -65,14 +80,28 @@ fn create_transaction(
     }
 }
 
-fn sign_tx(
-    secp: Secp256k1<All>,
+fn verify_p2tr_commitment(
+    secp: &Secp256k1<All>,
+    script: &Script,
+    key_pair_internal: &KeyPair,
+    tap_info: &TaprootSpendInfo,
+    actual_control: &ControlBlock,
+) {
+    let tweak_key_pair = key_pair_internal
+        .tap_tweak(&secp, tap_info.merkle_root())
+        .to_inner();
+    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
+    assert!(actual_control.verify_taproot_commitment(secp, tweak_key_pair_public_key, script));
+}
+
+fn sign_script_tx(
+    secp: &Secp256k1<All>,
     tx_ref: &Transaction,
     prevouts: &Prevouts<TxOut>,
     script: &Script,
-    user_key_pair: &KeyPair,
+    key_pair_user: &KeyPair,
     tap_info: &TaprootSpendInfo,
-    internal: &KeyPair,
+    key_pair_internal: &KeyPair,
 ) -> Transaction {
     let mut tx = tx_ref.clone();
     let sighash_sig = SighashCache::new(&mut tx.clone())
@@ -85,7 +114,7 @@ fn sign_tx(
         .unwrap();
     // println!("sighash_sig: {}", sighash_sig);
     // println!("message: {}", Message::from_slice(&sighash_sig).unwrap());
-    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), user_key_pair);
+    let sig = secp.sign_schnorr(&Message::from_slice(&sighash_sig).unwrap(), key_pair_user);
     // println!("sig: {}", sig);
 
     let actual_control = tap_info
@@ -94,9 +123,7 @@ fn sign_tx(
     // println!("actual_control: {:#?}", actual_control);
 
     // verify commitment
-    let tweak_key_pair = internal.tap_tweak(&secp, tap_info.merkle_root()).to_inner();
-    let (tweak_key_pair_public_key, _) = tweak_key_pair.x_only_public_key();
-    assert!(actual_control.verify_taproot_commitment(&secp, tweak_key_pair_public_key, script));
+    verify_p2tr_commitment(secp, script, key_pair_internal, tap_info, &actual_control);
 
     let schnorr_sig = SchnorrSig {
         sig,
@@ -114,304 +141,166 @@ fn sign_tx(
     tx
 }
 
-// #[test]
-// pub fn test_main() {
-//     let secp = Secp256k1::new();
-//     // predefined data
-//     let alice_secret =
-//         SecretKey::from_str("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90")
-//             .unwrap();
-//     let bob_secret =
-//         SecretKey::from_str("81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9")
-//             .unwrap();
-//     let internal_secret =
-//         SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
-//             .unwrap();
-//     // let preimage =
-//     //     Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
-//
-//     // data extracted from predefined
-//     // TODO: will use directly the public key for FORST, no access to its private key before hand
-//     let alice = KeyPair::from_secret_key(&secp, &alice_secret);
-//     let (alice_public_key, _) = alice.x_only_public_key();
-//     let bob = KeyPair::from_secret_key(&secp, &bob_secret);
-//     let (bob_public_key, _) = bob.x_only_public_key();
-//     let internal = KeyPair::from_secret_key(&secp, &internal_secret);
-//     let (internal_public_key, _) = internal.x_only_public_key();
-//     // let preimage_hash = bitcoin::hashes::sha256::Hash::hash(&preimage);
-//
-//     println!("alice public key {}", alice.public_key());
-//     println!("bob public key {}", bob.public_key());
-//     println!("internal public key {}", internal.public_key());
-//
-//     // println!("preimage {}", preimage_hash.to_string());
-//
-//     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
-//     // get the current block height using the client
-//     let block_height = helpers::get_current_block_height(&client);
-//
-//     // write it for 2 blocks from this moment
-//     // new address is this
-//     // new object is this
-//     let unlock_block = 2427365;
-//     //  2424648 + 2; //2427237
-//
-//     println!("unlock block {}", unlock_block);
-//
-//     // scripts construction
-//     let alice_script = helpers::create_script_refund(&alice_public_key, unlock_block);
-//     let bob_script = helpers::create_script_pox(&bob_public_key);
-//
-//     println!("alice script {}", alice_script);
-//     println!("bob script {}", bob_script);
-//
-//     let (tap_info, address) = helpers::create_tree(&secp, &internal, &alice_script, &bob_script);
-//
-//     println!("address {:?}", address);
-//
-//     println!("current block heigh {}", block_height);
-//     let (vec_tx_in, prev_tx) = helpers::get_prev_txs(&client, &address);
-//
-//     // creates tx
-//     let output_address =
-//         Address::from_str("tb1p5cqxec8l6nxnw0lxay4qxuq2kx4w0n5vmfnp36z4746zdpw462eqy9wmy0")
-//             .unwrap();
-//     // let output_address = Address::from_str("tb1q6vgmar6dvshat2eqnkq20nuwrth75pnuz5fk2g").unwrap();
-//
-//     // gets the best prev out to spend and saves the index of the tx and of the output
-//     let (best_prev_tx_index, best_prev_out_index) =
-//         helpers::get_best_prev_to_spend_index(prev_tx.clone(), &address);
-//
-//     // let total = get_total_available_amount(&prev_tx);
-//     let total = helpers::get_best_amount(&prev_tx, best_prev_tx_index, best_prev_out_index);
-//     println!(
-//         "is lock height {:?}",
-//         LockTime::from_height(block_height as u32)
-//     );
-//
-//     println!("total {}", total);
-//     println!("packed lock time: {}", PackedLockTime(block_height as u32));
-//
-//     let fees = 300;
-//     let amount = total - fees;
-//     println!("amount this {}", amount);
-//     let mut tx = create_transaction(
-//         &vec_tx_in,
-//         &output_address,
-//         amount,
-//         best_prev_tx_index,
-//         block_height,
-//     );
-//
-//     // sign tx
-//     let prevouts = Prevouts::One(
-//         0,
-//         prev_tx[best_prev_tx_index].output[best_prev_out_index].clone(),
-//     );
-//
-//     println!("prevouts {:?}", prevouts);
-//
-//     println!("tx before signing {:?}", tx);
-//
-//     // alice signing method - not working
-//     tx = sign_tx(
-//         secp,
-//         &tx,
-//         &prevouts,
-//         &alice_script,
-//         &alice,
-//         &tap_info,
-//         &internal,
-//     );
-//
-//     // bob signing method
-//     // tx = sign_tx(
-//     //     secp,
-//     //     &tx,
-//     //     &prevouts,
-//     //     &bob_script,
-//     //     &bob,
-//     //     &tap_info,
-//     //     &internal,
-//     // );
-//
-//     // broadcast tx
-//     let tx_id = client.transaction_broadcast(&tx).unwrap();
-//     println!("transaction hash: {}", tx_id);
-// }
+fn sign_key_tx(
+    secp: &Secp256k1<All>,
+    tx_ref: &Transaction,
+    prevouts: &Prevouts<TxOut>,
+    key_pair_internal: &KeyPair,
+    tap_info: &TaprootSpendInfo,
+) -> Transaction {
+    let mut tx = tx_ref.clone();
+    let sighash_sig = SighashCache::new(&mut tx.clone())
+        .taproot_key_spend_signature_hash(0, prevouts, SchnorrSighashType::AllPlusAnyoneCanPay) // or All
+        .unwrap();
 
-// https://github.com/mruddy/bip65-demos/blob/master/refund.js
+    let tweak_key_pair = key_pair_internal.tap_tweak(secp, tap_info.merkle_root());
+    // then sig
+    let msg = Message::from_slice(&sighash_sig).unwrap();
+
+    let sig = secp.sign_schnorr(&msg, &tweak_key_pair.to_inner());
+
+    //verify sig
+    secp.verify_schnorr(&sig, &msg, &tweak_key_pair.to_inner().x_only_public_key().0)
+        .unwrap();
+
+    // then witness
+    let schnorr_sig = SchnorrSig {
+        sig,
+        hash_ty: SchnorrSighashType::AllPlusAnyoneCanPay, // or All
+    };
+
+    tx.input[0].witness.push(schnorr_sig.serialize());
+
+    tx
+}
+
 #[test]
-pub fn test_example_alice() {
+pub fn test_main() {
     let secp = Secp256k1::new();
     // predefined data
-    let alice_secret =
+    let secret_key_source =
         SecretKey::from_str("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90")
             .unwrap();
-    let bob_secret =
+    // let pox(bob) spend with internal
+    let secret_key_pox =
         SecretKey::from_str("81b637d8fcd2c6da6359e6963113a1170de795e4b725b84d1e0b4cfd9ec58ce9")
             .unwrap();
-    let internal_secret =
-        SecretKey::from_str("1229101a0fcf2104e8808dab35661134aa5903867d44deb73ce1c7e4eb925be8")
-            .unwrap();
+    // let preimage =
+    //     Vec::from_hex("107661134f21fc7c02223d50ab9eb3600bc3ffc3712423a1e47bb1f9a9dbf55f").unwrap();
 
-    let alice = KeyPair::from_secret_key(&secp, &alice_secret);
-    let (alice_public_key, _) = alice.x_only_public_key();
-    let bob = KeyPair::from_secret_key(&secp, &bob_secret);
-    let (bob_public_key, _) = bob.x_only_public_key();
-    let internal = KeyPair::from_secret_key(&secp, &internal_secret);
-    let (internal_public_key, _) = internal.x_only_public_key();
+    // data extracted from predefined
+    // TODO: will use directly the public key for FORST, no access to its private key before hand
+    let key_pair_source = KeyPair::from_secret_key(&secp, &secret_key_source);
+    let (xonly_public_key_source, _) = key_pair_source.x_only_public_key();
+    let key_pair_pox = KeyPair::from_secret_key(&secp, &secret_key_pox);
+    let (xonly_public_key_pox, _) = key_pair_pox.x_only_public_key();
+    // let preimage_hash = bitcoin::hashes::sha256::Hash::hash(&preimage);
 
-    println!("alice public key {}", alice.public_key());
-    println!("bob public key {}", bob.public_key());
-    println!("internal public key {}", internal.public_key());
+    let public_key_source =
+        PublicKey::from_private_key(&secp, &PrivateKey::new(secret_key_source, Network::Testnet));
+    let public_key_pox =
+        PublicKey::from_private_key(&secp, &PrivateKey::new(secret_key_pox, Network::Testnet));
 
+    println!(
+        "key_pair_source public key {}",
+        key_pair_source.public_key()
+    );
+    println!("bob public key {}", key_pair_pox.public_key());
+
+    // println!("preimage {}", preimage_hash.to_string());
 
     let client = Client::new("ssl://electrum.blockstream.info:60002").unwrap();
     // get the current block height using the client
     let block_height = helpers::get_current_block_height(&client);
-    let unlock_block = block_height + 1;
 
-    println!("Blocks {} {}", block_height, unlock_block);
+    // write it for 2 blocks from this moment
+    // new address is this
+    // new object is this
+    let unlock_block = 2427365;
+    // 2435040;
+    //  2424648 + 2; //2427237
 
-    let redeemScript = helpers::create_script_refund(&alice_public_key, unlock_block);
+    println!("unlock block {}", unlock_block);
 
-    // Pay from alice to redeem script
-    // Deposit transaction
+    // scripts construction
+    let refund_script = helpers::create_script_refund(&xonly_public_key_source, unlock_block);
+    let unspendable_script = helpers::create_script_unspendable();
+    // let pox_script = helpers::create_script_pox(&xonly_public_key_pox);
 
-    println!("redeem script {}", redeemScript);
-    let builder =
-        TaprootBuilder::with_huffman_tree(vec![(1, redeemScript.clone())])
+    println!("refund script {}", refund_script.to_hex());
+    println!("unspendable script {}", unspendable_script.to_hex());
+    // println!("pox script {}", pox_script.to_hex());
+
+    let (tap_info, address) =
+        helpers::create_tree(&secp, &key_pair_pox, &refund_script, &unspendable_script);
+
+    println!("address {:?}", address);
+
+    // return;
+
+    println!("current block heigh {}", block_height);
+    let (vec_tx_in, prev_tx) = helpers::get_prev_txs(&client, &address);
+
+    // creates tx
+    // script address
+    let output_address =
+        Address::from_str("tb1ptnfaxqt25gk9ppunjuz3ex3uw065kya6jefjwkyppd9yu82r8egqxvky3l")
             .unwrap();
 
-    let (internal_public_key, _) = internal.x_only_public_key();
+    // electrum wallet address
+    // let output_address = Address::from_str("tb1q6vgmar6dvshat2eqnkq20nuwrth75pnuz5fk2g").unwrap();
 
-    let tap_info = builder.finalize(&secp, internal_public_key).unwrap();
-
-    let address = Address::from_str("tb1p0ug8xz7mlhxjcrtkn7365rs9dldekfdnh6ve7pzpzmf5lnr8v0uq9je0cf").unwrap();
-    // let address = Address::p2tr(
-    //     &secp,
-    //     tap_info.internal_key(),
-    //     tap_info.merkle_root(),
-    //     Network::Testnet,
-    // );
-
-    // When depositing uncomment this
-    // p2wpkh_electrum::p2wpkh_electrum(
-    //     Some("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90"),
-    //     &client,
-    //     200,
-    //     &address.script_pubkey(),
-    // );
-
-    // Redeeming
-    let (vec_tx_in, prev_tx) = helpers::get_prev_txs(&client, &address);
-    println!("Previous transactions {:?} {}", prev_tx, address);
-    println!("What {:?}", client
-        .script_list_unspent(&(address.script_pubkey()))
-        .unwrap());
-
-    let private_key = from_seed(&Some("2bd806c97f0e00af1a1fc3328fa763a9269723c8db8fac4f93af71db186d6e90"));
-    let alice_address = Address::p2wpkh(&private_key.public_key(&secp), crate::bitcoin_wallet::constants::NETWORK).unwrap();
-    // // gets the best prev out to spend and saves the index of the tx and of the output
+    // gets the best prev out to spend and saves the index of the tx and of the output
     let (best_prev_tx_index, best_prev_out_index) =
         helpers::get_best_prev_to_spend_index(prev_tx.clone(), &address);
 
-    println!("Input {}", vec_tx_in[best_prev_tx_index].previous_output.clone());
-    let unsigned_transaction = Transaction {
-        version: 2,
-        lock_time: PackedLockTime(unlock_block as u32),
-        input: vec![TxIn {
-            previous_output: vec_tx_in[best_prev_tx_index].previous_output.clone(),
-            script_sig: Script::new(),
-            sequence: Sequence(0xFFFFFFFF),
-            witness: Witness::default(),
-        }],
-        output: vec![TxOut {
-            value: 3,
-            script_pubkey: alice_address.script_pubkey(), // where funds are going
-        }],
-    };
+    // let total = get_total_available_amount(&prev_tx);
+    let total = helpers::get_best_amount(&prev_tx, best_prev_tx_index, best_prev_out_index);
+    println!(
+        "is lock height {:?}",
+        LockTime::from_height(block_height as u32)
+    );
 
-    let mut final_tx = unsigned_transaction.clone();
+    println!("total {}", total);
+    println!("packed lock time: {}", PackedLockTime(block_height as u32));
 
-    // sign each input
-    let secp = secp256k1::Secp256k1::new();
-    for i in 0..unsigned_transaction.input.len() {
-        // see https://bitcoin.stackexchange.com/questions/66197/step-by-step-example-to-redeem-a-p2sh-output-required
-        let hash = unsigned_transaction.signature_hash(i, &redeemScript, 0x1);
-        let msg = secp256k1::Message::from_slice(hash.as_ref()).unwrap();
-        let sig = secp
-            .sign_ecdsa(
-                &msg,
-                // &match secp256k1::Message::from(hash.as_slice()) {
-                //     Ok(m) => m,
-                //     Err(_) => Err("sign".to_string()),
-                // },
-                &private_key.inner,
-            ).serialize_der();
+    let fees = 300;
+    let amount = total - fees;
+    println!("amount this {}", amount);
+    let mut tx = create_transaction(
+        &vec_tx_in,
+        &output_address,
+        amount,
+        best_prev_tx_index,
+        block_height,
+    );
 
-        println!("signature length {}", sig.len());
-        // println!("signature is {}", bitcoin_hashes::hex::encode(&sig));
+    // sign tx
+    let prevouts = Prevouts::One(
+        0,
+        prev_tx[best_prev_tx_index].output[best_prev_out_index].clone(),
+    );
 
-        // add SIG_HASHALL
-        let mut script_sig_first_part = Vec::new();
-        script_sig_first_part.extend(sig.iter());
-        // why do we need this?
+    println!("prevouts {:?}", prevouts);
 
-        // https://bitcoin.stackexchange.com/questions/66197/step-by-step-example-to-redeem-a-p2sh-output-required
-        script_sig_first_part.push(0x1);
+    println!("tx before signing {:?}", tx);
 
-        // attach the signature to script_sig
-        let script_sig = Builder::new()
-            .push_slice(&script_sig_first_part)
-            .push_slice(redeemScript.as_bytes())
-            .into_script();
+    // refund signing method
+    tx = sign_script_tx(
+        &secp,
+        &tx,
+        &prevouts,
+        &refund_script,
+        &key_pair_source,
+        &tap_info,
+        &key_pair_pox,
+    );
 
-        let mut finalWitness = Vec::new();
-        finalWitness.push(script_sig_first_part);
-        final_tx.input[i].witness = Witness::from_vec(finalWitness);
+    // pox signing method
+    // spend using internal key
+    // tx = sign_key_tx(&secp, &tx, &prevouts, &key_pair_pox, &tap_info);
 
-        println!(
-            "script sig which is {:?}",
-            // bitcoin_hashes::hex::encode(&script_sig.as_bytes()),
-            &script_sig
-        );
-        // final_tx.input[i].script_sig = script_sig;
-    }
-
-    // tx.txid();
-    // redeemScript.as_bytes()
-    // tx.input[0].script_sig = Builder::new().push_slice(tx.)
-    // tx.input[0].script_sig = Builder::new()
-    //     .push_slice(&secp.sign_ecdsa(
-    //         SighashCache.signature_hash(
-    //             best_prev_out_index,
-    //             redeemScript,
-    //             200,
-    //             SighashCache::All,
-    //         ),
-    //         &alice_secret,
-    //     ).serialize_der())
-    //     .push_opcode(bitcoin::blockdata::opcodes::OP_FALSE)
-    //     .push_script(redeemScript.clone())
-    //     .into_script();
-
-
-    // attach the signature to script_sig
-    // let script_sig = Builder::new()
-    //     .push_slice(&script_sig_first_part)
-    //     .push_slice(redeems[i].redeem_script.as_bytes())
-    //     .into_script();
-
-    // let mut tx = create_transaction(
-    //     &vec_tx_in,
-    //     &alice_address,
-    //     200,
-    //     best_prev_tx_index,
-    //     unlock_block,
-    // );
-
-    let redeem_hash = client.transaction_broadcast(&final_tx);
-    println!("Redeem {}", redeem_hash.unwrap());
+    // broadcast tx
+    let tx_id = client.transaction_broadcast(&tx).unwrap();
+    println!("transaction hash: {}", tx_id);
 }
