@@ -4,7 +4,16 @@ description = 'descentralized mining pool SC'
 authors = []
 telemetry = false
 cache_dir = '.cache'
-requirements = []
+[contracts.main]
+path = 'contracts/main.clar'
+clarity_version = 2
+epoch = 2.1
+
+[[project.requirements]]
+contract_id = 'SP000000000000000000002Q6VF78.pox-2'
+
+[[project.requirements]]
+contract_id = 'ST000000000000000000002AMW42H.pox-2'
 
 [contracts.main-contract]
 path = 'contracts/main-contract.clar'
