@@ -613,3 +613,16 @@ true))
 
 (define-read-only (get-delegated-amount (user principal))
 (default-to u0 (get amount-ustx (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-delegation-info user))))
+
+(define-read-only (get-liquidity-provider) 
+(var-get liquidity-provider))
+
+(define-read-only (get-amount-rewarded) 
+(var-get amount-rewarded))
+
+(define-read-only (get-blocks-rewarded) 
+(var-get blocks-rewarded))
+
+(define-read-only (get-stacked-this-cycle) 
+(var-get sc-locked-balance))
+
