@@ -251,11 +251,8 @@
 (define-read-only (was-block-claimed (given-block-height uint)) 
   (if 
     (is-none (get claimed (map-get? claimed-rewards {block-number: given-block-height}))) 
-    false 
-    (if 
-      (unwrap-panic (get claimed (map-get? claimed-rewards {block-number: given-block-height}))) 
-      true 
-      false)))
+    false  
+    true))
 
 ;; BALANCES FLOW
 

@@ -642,3 +642,10 @@ true))
   (if (check-is-stacker address)
     (ok "is-stacker")
     (ok "is-none"))))
+
+
+(define-read-only (was-block-claimed (rewarded-burn-block uint)) 
+  (if 
+    (is-none (map-get? already-rewarded {burn-block-height: rewarded-burn-block}))
+    false 
+    true ))
