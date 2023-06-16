@@ -474,13 +474,13 @@
 
 (define-private (transfer-reward-one-stacker (stacker principal)) 
 (let (
-      ;; (reward (* u426 (default-to u0 (get reward (map-get? burn-block-rewards { burn-height: (var-get burn-block-to-distribute-rewards)}))))) ;; TODO: replace with alexGo 
-      (reward 
-        (unwrap! (preview-exchange-reward 
-          (default-to u0 
-            (get reward 
-              (map-get? burn-block-rewards { burn-height: (var-get burn-block-to-distribute-rewards)}))) 
-          u5) err-cant-unwrap-exchange-preview))
+      (reward (* u426 (default-to u0 (get reward (map-get? burn-block-rewards { burn-height: (var-get burn-block-to-distribute-rewards)}))))) ;; TODO: replace with alexGo 
+     ;;(reward 
+        ;;(unwrap! (preview-exchange-reward 
+          ;;(default-to u0 
+            ;;(get reward 
+              ;;(map-get? burn-block-rewards { burn-height: (var-get burn-block-to-distribute-rewards)}))) 
+          ;;u5) err-cant-unwrap-exchange-preview))
       (stacker-weight 
         (default-to u0 
           (get weight-percentage 
@@ -499,8 +499,8 @@
           (ok false))))
 
 
-(define-private (preview-exchange-reward (sats-amount uint) (slippeage uint)) 
-(contract-call? .bridge-contract swap-preview .token-wbtc .token-wstx sats-amount slippeage))
+;;(define-private (preview-exchange-reward (sats-amount uint) (slippeage uint)) 
+;;(contract-call? .bridge-contract swap-preview .token-wbtc .token-wstx sats-amount slippeage))
 
 ;; Weight calculation functions
 
