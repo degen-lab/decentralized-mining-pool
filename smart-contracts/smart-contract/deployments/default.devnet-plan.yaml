@@ -11,7 +11,7 @@ plan:
         - contract-publish:
             contract-name: main
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 339510
+            cost: 339540
             path: contracts/main.clar
             anchor-block-only: true
             clarity-version: 2
@@ -27,6 +27,13 @@ plan:
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 433290
             path: contracts/main-contract-5-blocks.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: pox-2-fake
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 668510
+            path: contracts/pox-2-fake.clar
             anchor-block-only: true
             clarity-version: 2
       epoch: "2.1"
