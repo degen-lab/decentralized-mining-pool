@@ -732,5 +732,4 @@ true))
 (define-read-only (get-minimum-deposit-liquidity-provider) 
 (var-get minimum-deposit-amount-liquidity-provider))
 
-(define-read-only (get-user-data (user principal)) 
-(map-get? user-data {address: user}))
+
